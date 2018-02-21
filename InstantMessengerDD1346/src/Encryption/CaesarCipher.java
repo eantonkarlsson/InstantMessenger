@@ -1,16 +1,21 @@
-package encryption;
+package Encryption;
 
 public class CaesarCipher implements AbstractCipher{
 
-    private static int shift = -1;
+    private static final String algorithm = "AES";
+    private int shift = -1;
 
-    public static void generateKey(){
+    public void generateKey(){
         if (shift < 0) {
             shift = (int) (Math.random() * 26);
         }
     }
 
-    public static int returnKey(){
+    public void setKey(int i){
+        shift = i;
+    }
+
+    public int returnKey(){
 
         generateKey();
         return shift;
@@ -40,10 +45,9 @@ public class CaesarCipher implements AbstractCipher{
         return strBuilder.toString();
     }
 
-    public String decrypt(String str, GenericCryptoKey gck){
+    public String decrypt(String str){
 
         StringBuilder strBuilder = new StringBuilder();
-        int privateShift = gck.getCaesarKey();
         int length = str.length();
         char c;
         for (int j = 0; j < length; j++)
@@ -52,12 +56,12 @@ public class CaesarCipher implements AbstractCipher{
             // Shift character ONLY if it is a letter
             if (Character.isLetter(c))
             {
-                c = (char) (str.charAt(j) - privateShift);
+                c = (char) (str.charAt(j) - shift);
             }
 
             if ((Character.isLowerCase(str.charAt(j)) && c < 'a') || (Character.isUpperCase(str.charAt(j)) && c < 'A'))
             {
-                c = (char) (str.charAt(j) + 26 - privateShift);
+                c = (char) (str.charAt(j) + 26 - shift);
             }
             strBuilder.append(c);
         }
@@ -65,6 +69,6 @@ public class CaesarCipher implements AbstractCipher{
     }
 
     public String encryptionType(){
-        return "caesar";
+        return algorithm;
     }
 }

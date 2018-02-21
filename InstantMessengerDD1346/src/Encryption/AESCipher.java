@@ -1,4 +1,4 @@
-package encryption;
+package Encryption;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -8,8 +8,8 @@ import java.security.NoSuchAlgorithmException;
 public final class AESCipher implements AbstractCipher {
 
     private static final String algorithm = "AES";
-    private static byte[] keyContent = null;
-    private static SecretKeySpec key = null;
+    private byte[] keyContent = null;
+    private SecretKeySpec key = null;
 
     private void getKey() throws NoSuchAlgorithmException {
         if (key == null || keyContent == null)
@@ -43,8 +43,7 @@ public final class AESCipher implements AbstractCipher {
 
         getKey();
         byte[] dataToDecrypt = str.getBytes();
-        byte[] incomingKey = gck.getAESKey();
-        SecretKeySpec decodeKey = new SecretKeySpec(incomingKey, "AES");
+        SecretKeySpec decodeKey = new SecretKeySpec(keyContent, "AES");
         Cipher AEScipher = Cipher.getInstance("AES");
         AEScipher.init(Cipher.DECRYPT_MODE, decodeKey);
         byte[] decryptedData = AEScipher.doFinal(dataToDecrypt);
@@ -57,7 +56,7 @@ public final class AESCipher implements AbstractCipher {
     }
 
     public String encryptionType(){
-        return "AES";
+        return algorithm;
     }
 
 }

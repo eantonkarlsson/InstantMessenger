@@ -1,22 +1,17 @@
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
+import Encryption.AESCipher;
+import Encryption.AbstractCipher;
+import Encryption.CaesarCipher;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
-import java.lang.reflect.Array;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import encryption.*;
 
 class Node {
 
@@ -92,6 +87,7 @@ public class ChatController{
 
     private AbstractCipher encryptCipher;
     private AbstractCipher decryptCipher;
+    private ArrayList<Message> messages = new ArrayList<>();
     private Message outgoingMessage;
     private Message incomingMessage;
     private String currentColorRGB;
@@ -122,9 +118,9 @@ public class ChatController{
 		if (encryptCipher != null) {
 			Node enc = new Node(msg);
 			enc.setElement("encrypted");
-			enc.setAttribute("type", encryptCipher);
+			enc.setAttribute("type", encryptCipher.encryptionType());
 			try {
-				str = cipher.encrypt(str);
+				str = encryptCipher.encrypt(str);
 				txt.addChild(enc);
 			} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
 				e.printStackTrace();
@@ -136,7 +132,9 @@ public class ChatController{
 	}
 
 	public void createMessage(String str) {
+
 		outgoingMessage = new Message(transformText(str));
+		messages.add(outgoingMessage);
 	}
 
 	public void deTransformMessage(String str) {
@@ -149,37 +147,21 @@ public class ChatController{
     }
 
     public void setSelfUser(String name) {
-		selfUser = name;
+
 	}
 
-	public void setEncryptionMethod(String type) {
+	public void changeCipher(AbstractCipher cipher, String type) {
 
 		if (type == "AES") {
-			encryptCipher = new AESCipher();
+			cipher = new AESCipher();
 
 		}
 		else if (type == "caesar") {
-			encryptCipher = new CaesarCipher();
+			cipher = new CaesarCipher();
 		}
 		else {
-			encryptCipher = null;
+			cipher = null;
 		}
 	}
-
-	public void setDecryptionMethod(String type) {
-
-		if (type == "AES") {
-			decryptCipher = new AESCipher();
-
-		}
-		else if (type == "caesar") {
-			decryptCipher = new CaesarCipher();
-		}
-		else {
-			decryptCipher = null;
-		}
-	}
-
-}
 
 }

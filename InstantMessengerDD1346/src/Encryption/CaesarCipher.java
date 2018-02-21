@@ -1,3 +1,4 @@
+package encryption;
 
 public class CaesarCipher implements AbstractCipher{
 
@@ -61,5 +62,9 @@ public class CaesarCipher implements AbstractCipher{
             strBuilder.append(c);
         }
         return strBuilder.toString();
+    }
+
+    public String encryptionType(){
+        return "caesar";
     }
 }

@@ -1,3 +1,5 @@
+package encryption;
+
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
@@ -52,6 +54,10 @@ public final class AESCipher implements AbstractCipher {
     public byte[] returnKey() throws NoSuchAlgorithmException{
         getKey();
         return keyContent;
+    }
+
+    public String encryptionType(){
+        return "AES";
     }
 
 }

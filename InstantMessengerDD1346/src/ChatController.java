@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import encryption.*;
 
 class Node {
 
@@ -77,7 +78,7 @@ class Node {
 		return strBuilder.toString();
 	}
 
-	String formatXML(String str) {
+	public String formatXML(String str) {
 		StringBuilder strBuilder = new StringBuilder();
 		strBuilder.append(rootNode.exportStartXML());
 		strBuilder.append(str);
@@ -89,16 +90,20 @@ class Node {
 
 public class ChatController{
 
-    private AbstractCipher cipher;
+    private AbstractCipher encryptCipher;
+    private AbstractCipher decryptCipher;
+    private Message outgoingMessage;
+    private Message incomingMessage;
     private String currentColorRGB;
-    private String selfUser;
+    private static User selfUser;
+	private User otherUser;
 	private String encryptionMethod;
-	private String otherUser;
 	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
 
-
-
-	public ChatController() {
+	public ChatController(User user) {
+		otherUser = user;
+		encryptionMethod = "none";
+		currentColorRGB = "#000000";
 	}
 
 
@@ -110,22 +115,19 @@ public class ChatController{
 		msg.addChild(txt);
 
 		msg.setElement("message");
-		msg.setAttribute("sender",selfUser);
+		msg.setAttribute("sender",selfUser.returnName());
 		txt.setElement("text");
 		txt.setAttribute("color",currentColorRGB);
 
-		if (cipher != null) {
+		if (encryptCipher != null) {
 			Node enc = new Node(msg);
 			enc.setElement("encrypted");
-			enc.setAttribute("type",encryptionMethod);
+			enc.setAttribute("type", encryptCipher);
 			try {
 				str = cipher.encrypt(str);
+				txt.addChild(enc);
 			} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
 				e.printStackTrace();
-				enc = null;
-			}
-			if (enc != null) {
-				txt.addChild(enc);
 			}
 		}
 
@@ -134,6 +136,10 @@ public class ChatController{
 	}
 
 	public void createMessage(String str) {
+		outgoingMessage = new Message(transformText(str));
+	}
+
+	public void deTransformMessage(String str) {
 
 	}
 
@@ -148,22 +154,31 @@ public class ChatController{
 
 	public void setEncryptionMethod(String type) {
 
-		encryptionMethod = type;
 		if (type == "AES") {
-			cipher = new AESCipher();
+			encryptCipher = new AESCipher();
 
 		}
 		else if (type == "caesar") {
-			cipher = new CaesarCipher();
+			encryptCipher = new CaesarCipher();
 		}
 		else {
-			cipher = null;
-			encryptionMethod = "none";
+			encryptCipher = null;
 		}
 	}
 
+	public void setDecryptionMethod(String type) {
 
+		if (type == "AES") {
+			decryptCipher = new AESCipher();
 
+		}
+		else if (type == "caesar") {
+			decryptCipher = new CaesarCipher();
+		}
+		else {
+			decryptCipher = null;
+		}
+	}
 
 }
 

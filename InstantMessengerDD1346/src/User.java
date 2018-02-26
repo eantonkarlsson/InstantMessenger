@@ -3,6 +3,10 @@ public class User {
     private boolean isSelf;
     private String crypto;
     private String key;
+    
+    public User(String nameIn){
+        name = nameIn;
+    }
 
     public String returnName() {
 	return null;

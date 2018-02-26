@@ -10,7 +10,6 @@ import javax.swing.event.ChangeListener;
 public class MyFrame extends JFrame {
     
     private JPanel panel1;
-    private JPanel panel2;
     private JColorChooser colorChooser; 
     private User currentUser;
     private JMenuBar menuBar;
@@ -21,9 +20,8 @@ public class MyFrame extends JFrame {
     private User user;
     private JButton send;
     private JButton file; 
-    private JButton colorButton;
     private JTextField textField;
-    private JTextArea textArea;
+    private JTextPane textArea;
     private JTabbedPane tabbedPane;
     private JTextField nameField;
     private JButton setSettings;
@@ -54,11 +52,6 @@ public class MyFrame extends JFrame {
         add(tabbedPane, BorderLayout.CENTER);
         pack();
 
-        
-
-        
-        
-
         setName.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 String name = nameField.getText(); 
@@ -76,6 +69,9 @@ public class MyFrame extends JFrame {
                 JTextField portField = new JTextField(20);
                 panel1.add(port);
                 panel1.add(portField);
+                String[] encryptions = { "None", "AES", "Caesarkrypto"};
+                JComboBox encryption = new JComboBox(encryptions);
+                panel1.add(encryption);
                 setSettings = new JButton("Set");
                 panel1.add(setSettings);
                 panel1.validate();
@@ -90,68 +86,48 @@ public class MyFrame extends JFrame {
                         titleLbl.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 5));
                         titlePanel.add(titleLbl);
                         JButton closeButton = new JButton("x");
-                        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        
+                        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));  
 
                         closeButton.addMouseListener(new MouseAdapter(){
                             public void mouseClicked(MouseEvent e){
                             tabbedPane.remove(panel);
-                        }
+                            }
                         });
                         titlePanel.add(closeButton);        
                         tabbedPane.addTab("Tab", panel);
                         tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(panel),titlePanel);
-
-                        
-                      //  tabbedPane.addTab(getTitlePanel(tabbedPane, panel, "Tab1"), panel);
-                        //tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(panel), 
-                      //  getTitlePanel(tabbedPane, panel, "Tab1"));
-                  
                     }
-       });
-        
-        
-                
-                
-                
+                });
+                   
             }
-        });
-        
-        
-//        add(tabbedPane);
-       
-        
-//        
-        
- //       
-//        JComponent panel2 = makeTextPanel();
-//        tabbedPane.addTab("Tab 2", panel2);   
-//        tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(panel1), 
-//                getTitlePanel(tabbedPane, panel1, "Tab2"));
-////        
-        
-        
+        });       
+           
 //        setJMenuBar(menuBar);
-        
-        
-        
+                
         setSize(1000,1000);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         setVisible(true);
-            
-        
-        
+       
     } 
     
     public JComponent makeTextPanel() {
+        textArea = new JTextPane();
         textField = new JTextField(30);
-        textArea = new JTextArea(35,90);
+        textArea.setPreferredSize(new Dimension(1000,550));
+        JButton colorButton = new JButton("Color");
         file = new JButton("File");
         send = new JButton("Send");
         JPanel panel = new JPanel();
         textArea.setEditable(false);
         JScrollPane editorScrollPane = new JScrollPane(textArea); //scroll 
         
+        panel.add(textArea);
+        panel.add(editorScrollPane);
+        panel.add(textField, BorderLayout.PAGE_END);
+        panel.add(file, BorderLayout.PAGE_END);
+        panel.add(colorButton, BorderLayout.PAGE_END);
+        panel.add(send, BorderLayout.PAGE_END);
+     
         JFileChooser fileChooser = new JFileChooser();
         file.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -162,30 +138,18 @@ public class MyFrame extends JFrame {
             }
         }
         });
-        colorButton = new JButton("Color");
+
         colorButton.setOpaque(true);  
         colorChooser = new JColorChooser(Color.BLACK); //defult color black
         colorButton.setBackground(Color.BLACK);
         colorButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-//                toggleColorChooser(); // show and hide the color chooser
-                colorChooser.showDialog(panel1,"Color", Color.BLACK );
-               
-
+                Color newColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+                colorButton.setBackground(newColor);
             } 
         });
-        colorChooser.getSelectionModel().addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                colorChanged(); // change background color of "button"
-            }
-        });
         
-        panel.add(textArea); 
-        panel.add(textField);
-        panel.add(file);
-        panel.add(colorButton);
-        panel.add(send);
-     
+
 
         return panel;
     }
@@ -210,22 +174,6 @@ public class MyFrame extends JFrame {
 
         return titlePanel;
     }
-    
-    private void toggleColorChooser() {
-    if (toggledColor) {
-        panel1.remove(colorChooser);
-    } else {
-        colorChooser.setVisible(true);
-        panel1.add(colorChooser);
-    }
-    toggledColor = !toggledColor;
-    panel1.validate();
-    panel1.repaint();
-    }  
-    
-    private void colorChanged() {
-        colorButton.setBackground(colorChooser.getSelectionModel().getSelectedColor());
-}
      
     public void changeUser() {
     }

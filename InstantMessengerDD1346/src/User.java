@@ -1,4 +1,5 @@
 public class User {
+
     private String name;
     private boolean isSelf;
     private String crypto;
@@ -13,10 +14,11 @@ public class User {
     }
 
     public boolean returnIsSelf() {
-	return false;
+	return isSelf;
     }
 
-    public void setName(String name) {
+    public void setName(String str) {
+        name = str;
     }
 
 }

@@ -1,12 +1,16 @@
 public class Message {
 
-    private String msg;
+    private String encryptedMsg;
 
     public Message(String str){
-        msg = str;
+        encryptedMsg = str;
     }
 
     public void UpdateText(String str) {
-        msg = str;
+        encryptedMsg = str;
+    }
+
+    public String returnEncryptedText(){
+        return encryptedMsg;
     }
 }

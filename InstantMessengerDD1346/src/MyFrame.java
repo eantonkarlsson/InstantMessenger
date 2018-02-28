@@ -8,7 +8,7 @@ import javax.swing.event.ChangeListener;
 
 
 public class MyFrame extends JFrame {
-    
+    // defining variables
     private JPanel panel1;
     private JColorChooser colorChooser; 
     private User currentUser;
@@ -40,6 +40,7 @@ public class MyFrame extends JFrame {
 //        menu = new JMenu("Client");
 //        menuBar.add(menu);
         
+        // create startpage
         panel1 = new JPanel();
         JLabel label = new JLabel("Name:"); 
         nameField = new JTextField(20);
@@ -52,6 +53,7 @@ public class MyFrame extends JFrame {
         add(tabbedPane, BorderLayout.CENTER);
         pack();
 
+        // set name and open connect settings
         setName.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 String name = nameField.getText(); 
@@ -72,11 +74,12 @@ public class MyFrame extends JFrame {
                 String[] encryptions = { "None", "AES", "Caesarkrypto"};
                 JComboBox encryption = new JComboBox(encryptions);
                 panel1.add(encryption);
-                setSettings = new JButton("Set");
+                setSettings = new JButton("Connect");
                 panel1.add(setSettings);
                 panel1.validate();
                 panel1.repaint();
                 
+                // connect and open chat window
                 setSettings.addActionListener(new ActionListener(){
                     public void actionPerformed(ActionEvent e){       
                         JComponent panel = makeTextPanel();
@@ -97,8 +100,7 @@ public class MyFrame extends JFrame {
                         tabbedPane.addTab("Tab", panel);
                         tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(panel),titlePanel);
                     }
-                });
-                   
+                });    
             }
         });       
            
@@ -110,6 +112,7 @@ public class MyFrame extends JFrame {
        
     } 
     
+    // create tab
     public JComponent makeTextPanel() {
         textArea = new JTextPane();
         textField = new JTextField(30);
@@ -139,6 +142,7 @@ public class MyFrame extends JFrame {
         }
         });
 
+        // choose color
         colorButton.setOpaque(true);  
         colorChooser = new JColorChooser(Color.BLACK); //defult color black
         colorButton.setBackground(Color.BLACK);
@@ -154,6 +158,7 @@ public class MyFrame extends JFrame {
         return panel;
     }
     
+    // create close button on tabs
     public JPanel getTitlePanel(JTabbedPane tabbedPane,JPanel panel, String title){
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setOpaque(false);
@@ -178,6 +183,7 @@ public class MyFrame extends JFrame {
     public void changeUser() {
     }
 
+    // run program
     public static void main(String[] args) {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         MyFrame frame = new MyFrame();

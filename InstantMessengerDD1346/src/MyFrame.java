@@ -3,9 +3,10 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
 
 public class MyFrame extends JFrame {
     // defining variables
@@ -81,7 +82,15 @@ public class MyFrame extends JFrame {
                 
                 // connect and open chat window
                 setSettings.addActionListener(new ActionListener(){
-                    public void actionPerformed(ActionEvent e){       
+                    public void actionPerformed(ActionEvent e){     
+                        if (adressField.getText().length()!=0){
+                            Client client = new Client(adressField.getText(),
+                                    Integer.parseInt(portField.getText()));  
+                        }
+                        // connect as server
+                        else {
+                            Server server = new Server(Integer.parseInt(portField.getText()));
+                        }
                         JComponent panel = makeTextPanel();
                         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
                         titlePanel.setOpaque(false);
@@ -152,9 +161,6 @@ public class MyFrame extends JFrame {
                 colorButton.setBackground(newColor);
             } 
         });
-        
-
-
         return panel;
     }
     
@@ -166,8 +172,7 @@ public class MyFrame extends JFrame {
         titleLbl.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 5));
         titlePanel.add(titleLbl);
         JButton closeButton = new JButton("x");
-        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        
+        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));    
 
         closeButton.addMouseListener(new MouseAdapter(){
 
@@ -188,7 +193,4 @@ public class MyFrame extends JFrame {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         MyFrame frame = new MyFrame();
     }
-
-	
-
 }

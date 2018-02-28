@@ -82,7 +82,6 @@ class Node {
 	}
 }
 
-
 public class ChatController{
 
     private AbstractCipher encryptCipher;

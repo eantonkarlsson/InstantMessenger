@@ -2,34 +2,34 @@
 import java.io.IOException;
 import java.net.*;
 
-public class Server extends Network {
+public class Server{
     private ServerSocket serverSocket;
     private User[] users;
     private User user;
 
     public Server(int port) {
+        // Start server socket
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            System.out.println("Could not listen on port:" + port);
+            System.exit(-1);
+        }
 
-            // Start server socket
+        // Listen after clients
+        while(true){
+            Socket clientSocket = null;
             try {
-                serverSocket = new ServerSocket(port);
+                clientSocket = serverSocket.accept();
+                
             } catch (IOException e) {
-                System.out.println("Could not listen on port");
+                System.out.println("Accept failed:"+port);
                 System.exit(-1);
             }
-
-            // Listen after clients
-            while(true){
-                Socket clientSocket = null;
-                try {
-                    clientSocket = serverSocket.accept();
-                } catch (IOException e) {
-                    System.out.println("Accept failed: 4444");
-                    System.exit(-1);
-                }
-                Thread thr = new ClientThread(clientSocket);
-                thr.start();
-            }
+            Thread thr = new ClientThread(clientSocket);
+            thr.start();
         }
+    }
 
     public void incomingConnection() {
     }

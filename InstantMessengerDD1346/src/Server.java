@@ -17,7 +17,7 @@ public class Server{
         }
 
         // Listen after clients
-        while(true){
+        //while(true){
             Socket clientSocket = null;
             try {
                 clientSocket = serverSocket.accept();
@@ -29,7 +29,7 @@ public class Server{
             Thread thr = new ClientThread(clientSocket);
             thr.start();
         }
-    }
+  //  }
 
     public void incomingConnection() {
     }

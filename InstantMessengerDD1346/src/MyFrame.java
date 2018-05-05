@@ -8,8 +8,9 @@ import java.util.logging.Logger;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class MyFrame extends JFrame {
+public class MyFrame extends Thread{ //extends JFrame
     // defining variables
+    private JFrame frame;
     private JPanel panel1;
     private JColorChooser colorChooser; 
     private User currentUser;
@@ -28,7 +29,7 @@ public class MyFrame extends JFrame {
     private JButton setSettings;
     private boolean toggledColor = false;
     
-    public MyFrame(){    
+    public void run() {    
 //        menuBar = new JMenuBar();
 //        menu = new JMenu("User");
 //        menuItem = new JMenuItem("Name");
@@ -42,6 +43,7 @@ public class MyFrame extends JFrame {
 //        menuBar.add(menu);
         
         // create startpage
+        frame = new JFrame();
         panel1 = new JPanel();
         JLabel label = new JLabel("Name:"); 
         nameField = new JTextField(20);
@@ -50,9 +52,9 @@ public class MyFrame extends JFrame {
         JButton setName = new JButton("Set");
         panel1.add(setName);
         JTabbedPane tabbedPane = new JTabbedPane();
-        add(panel1,BorderLayout.PAGE_START);
-        add(tabbedPane, BorderLayout.CENTER);
-        pack();
+        frame.add(panel1,BorderLayout.PAGE_START);
+        frame.add(tabbedPane, BorderLayout.CENTER);
+        frame.pack();
 
         // set name and open connect settings
         setName.addActionListener(new ActionListener(){
@@ -85,11 +87,16 @@ public class MyFrame extends JFrame {
                     public void actionPerformed(ActionEvent e){     
                         if (adressField.getText().length()!=0){
                             Client client = new Client(adressField.getText(),
-                                    Integer.parseInt(portField.getText()));  
+                                Integer.parseInt(portField.getText()));  
                         }
                         // connect as server
                         else {
-                            Server server = new Server(Integer.parseInt(portField.getText()));
+                            Thread thr1 = new Thread(new Server(Integer.parseInt(portField.getText())));
+                            thr1.start();
+                            
+                        //   Server server = new Server(Integer.parseInt(portField.getText()));
+                            
+                             
                         }
                         JComponent panel = makeTextPanel();
                         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -115,9 +122,9 @@ public class MyFrame extends JFrame {
            
 //        setJMenuBar(menuBar);
                 
-        setSize(1000,1000);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-        setVisible(true);
+        frame.setSize(1000,1000);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+        frame.setVisible(true);
        
     } 
     
@@ -191,6 +198,10 @@ public class MyFrame extends JFrame {
     // run program
     public static void main(String[] args) {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        MyFrame frame = new MyFrame();
+        Thread thr2 = new Thread(new MyFrame());
+        thr2.start();
+        //MyFrame frame = new MyFrame();
     }
+
+
 }

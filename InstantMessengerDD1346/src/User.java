@@ -12,7 +12,7 @@ public class User {
     }
 
     public String returnName() {
-	return null;
+	return name;
     }
 
     public boolean returnIsSelf() {
@@ -25,12 +25,13 @@ public class User {
 
     public static User stringToUser(String user) throws NullPointerException{
         for (User u: users){
-            if (u.returnName().equals(user))
+            if (u.toString().equals(user))
             {
                 return u;
             }
         }
         throw new NullPointerException();
     }
+
 
 }

@@ -12,6 +12,7 @@ import org.xml.sax.SAXException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,15 +37,21 @@ public class ChatController{
     private String outgoingMessage;
     private Message incomingMessage;
     private String currentColorRGB;
-    private static User currentUser;
+    private String currentUser;
 	private ArrayList<User> outgoingUsers = new ArrayList<>();
 	private String encryptionMethod;
 	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
+	private JComponent chatPane;
 
 	public ChatController(User user) {
 		outgoingUsers.add(user);
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
+		currentUser = "test";
+	}
+
+	public void addPanel(JComponent panel) {
+		chatPane = panel;
 	}
 
 	public void addUser(User u){
@@ -64,7 +71,7 @@ public class ChatController{
 		msg.setAttributeNode(sender);
 
 		Element txt = doc.createElement("text");
-		doc.appendChild(txt);
+		msg.appendChild(txt);
 		Attr color = doc.createAttribute("color");
 		color.setValue(currentColorRGB);
 		txt.setAttributeNode(color);
@@ -98,22 +105,23 @@ public class ChatController{
 
 	}
 
-	public void createMessage(String str) {
+	public String createMessage(String str) {
 
 		try {
-			Message newMsg = new Message(str, transformText(str), currentUser.toString(), currentColorRGB);
-			outgoingMessage = newMsg.returnXML();
+			Message newMsg = new Message(str, transformText(str), currentUser, currentColorRGB);
 			messages.add(newMsg);
+			return outgoingMessage = newMsg.returnXML();
 		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
 			e.printStackTrace();
 		}
+		return "";
 	}
 
 	public void importMessage(Message msg) {
 		messages.add(msg);
 	}
 
-	public void deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public String deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder = factory.newDocumentBuilder();
@@ -124,17 +132,23 @@ public class ChatController{
 		String[] content = new String[4];
 		content[0] = doc.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
 		content[1] = doc.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
-		content[2] = doc.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
+		try {
+			content[2] = doc.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
+		}catch (NullPointerException e){
+			content[2] = null;
+		}
 		if (content[2] == null) {
 			content[3] = doc.getElementsByTagName("text").item(0).getTextContent();
 			Message newMsg = new Message(content[3], msg, content[0], content[1]);
 			messages.add(newMsg);
+			return content[3];
 		}
 		else {
 			content[3] = doc.getElementsByTagName("encrypted").item(0).getTextContent();
 			String decryptedMsg = decryptCipher.decrypt(content[3]);
 			Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
 			messages.add(newMsg);
+			return decryptedMsg;
 		}
 	}
 
@@ -172,6 +186,20 @@ public class ChatController{
 		else {
 			decryptCipher = null;
 		}
+	}
+
+	public static void main(String[] args) {
+		ChatController cc = new ChatController(new User("Anton"));
+		String xmlmsg = cc.createMessage("hej");
+		System.out.println(xmlmsg);
+		try {
+			String msg = cc.deTransformMessage(xmlmsg);
+			System.out.println(msg);
+		} catch (ParserConfigurationException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+
+		//MyFrame frame = new MyFrame();
 	}
 
 }

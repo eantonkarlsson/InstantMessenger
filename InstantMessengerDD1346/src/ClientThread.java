@@ -3,6 +3,7 @@ import org.xml.sax.SAXException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
@@ -27,11 +28,16 @@ public class ClientThread extends Thread{
     private boolean done = false;
     private ChatController cc;
     private ChatController allcc;
+    private JFrame myFrame;
 
     // Konstruktorn sparar socketen lokalt
     public ClientThread(Socket sock){
-	clientSocket = sock;
-    }
+		clientSocket = sock;
+	}
+
+    public void addFrame(JFrame frame){
+    	myFrame = frame;
+	}
 
     public void run(){
 
@@ -52,18 +58,23 @@ public class ClientThread extends Thread{
 		System.out.println("Connection Established: "
 				   + clientSocket.getInetAddress());
 
-		try{
-			String firstMsg = in.readLine();
-			if (firstMsg.equals("")){
-				// print response if simple user
-				out.println("Awaiting response on connection. New messages will not be received.");
+		while(!done){
+
+			try {
+				String firstMsg = in.readLine();
+				if (firstMsg.equals("")){
+					// print response if simple user
+					out.println("Awaiting response on connection. New messages will not be received.");
+				}
+				if (acceptingConnection(firstMsg)){
+					done = true;
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			if (!acceptingConnection(firstMsg)){
-				done = true;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+
 		}
+		done = false;
 
 		while(!done){
 
@@ -80,7 +91,8 @@ public class ClientThread extends Thread{
 			}else{
 				//---------------------------- HERE WE HAVE A MSG -----------------------//
 				try {
-					cc.deTransformMessage(incomingMsg);
+					String newMsg = cc.deTransformMessage(incomingMsg);
+					System.out.println(newMsg);
 				} catch (ParserConfigurationException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | SAXException e) {
 					e.printStackTrace();
 				}
@@ -103,8 +115,20 @@ public class ClientThread extends Thread{
 
     	boolean decision = false;
     	if (str.startsWith("<request>") && str.endsWith("</request>")){
-    		// check if user wants to accept advanced connection
-			// block thread until decision has been made
+			Object[] options = {"Accept", "Decline"};
+			int n = JOptionPane.showOptionDialog(myFrame,
+					"User " + str
+							+ " would like to connect.",
+					"Incoming connection",
+					JOptionPane.YES_NO_CANCEL_OPTION,
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					options,
+					options[1]);
+			if (n == JOptionPane.YES_OPTION){
+				decision = true;
+				cc = new ChatController(new User("anton"));
+			}
 		}
 		else {
 			// check if user wants to accept simple connection
@@ -119,8 +143,21 @@ public class ClientThread extends Thread{
 
 	}
 
-	public void newMessage(Message newMsg) {
-		msgList.add(newMsg);
+	public ChatController requestAccess(String userID) {
+		try{
+			out = new PrintWriter(clientSocket.getOutputStream(), true);
+		}catch(IOException e){
+			System.out.println("getOutputStream failed: " + e);
+			System.exit(1);
+		}
+    	out.println("<request>" + userID + "</request>");
+		cc = new ChatController(new User(userID));
+		return cc;
+	}
+
+	public void send(String newMsg) {
+		String outgoing = cc.createMessage(newMsg);
+		out.println(outgoing);
 	}
 
 	public void kill() {

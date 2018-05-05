@@ -1,5 +1,13 @@
+import org.xml.sax.SAXException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 /**
@@ -17,6 +25,8 @@ public class ClientThread extends Thread{
     private BufferedReader in;
     private ArrayList<Message> msgList = new ArrayList<>();
     private boolean done = false;
+    private ChatController cc;
+    private ChatController allcc;
 
     // Konstruktorn sparar socketen lokalt
     public ClientThread(Socket sock){
@@ -24,89 +34,100 @@ public class ClientThread extends Thread{
     }
 
     public void run(){
-	try{
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-	}catch(IOException e){
-            System.out.println("getOutputStream failed: " + e);
-            System.exit(1);
-	}
-	try{
-            in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-	}catch(IOException e){
-            System.out.println("getInputStream failed: " + e);
-            System.exit(1);
-	}
 
-	System.out.println("Connection Established: "
+		try{
+			out = new PrintWriter(clientSocket.getOutputStream(), true);
+		}catch(IOException e){
+			System.out.println("getOutputStream failed: " + e);
+			System.exit(1);
+		}
+		try{
+			in = new BufferedReader(new InputStreamReader(
+					clientSocket.getInputStream()));
+		}catch(IOException e){
+			System.out.println("getInputStream failed: " + e);
+			System.exit(1);
+		}
+
+		System.out.println("Connection Established: "
 				   + clientSocket.getInetAddress());
 
-	try{
-            String firstMsg = in.readLine();
-            if (firstMsg.equals("")){
-		// print response if simple user
-		out.println("Awaiting response on connection. New messages will not be received.");
-            }
-            if (!acceptingConnection(firstMsg)){
-		done = true;
-            }
-	} catch (IOException e) {
-            e.printStackTrace();
-	}
-        
-	while(!done){
-            if (!msgList.isEmpty()){
-		Message msg = msgList.remove(0);
-		out.println(msg.returnEncryptedText());
-            }
-            try{
-		String incomingMsg = in.readLine();
-		if(incomingMsg==null){
-                    System.out.println("Client disconnect!");
-                    done = true;
-		}else{
-//---------------------------- HERE WE HAVE A MSG -----------------------//
+		try{
+			String firstMsg = in.readLine();
+			if (firstMsg.equals("")){
+				// print response if simple user
+				out.println("Awaiting response on connection. New messages will not be received.");
+			}
+			if (!acceptingConnection(firstMsg)){
+				done = true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		}catch(IOException e){
-		System.out.println("readLine failed: " + e);
-		System.exit(1);
+
+		while(!done){
+
+//			if (!msgList.isEmpty())
+//			{
+//				Message msg = msgList.remove(0);
+//				out.println(msg.returnEncryptedText());
+//			}
+			try{
+			String incomingMsg = in.readLine();
+			if(incomingMsg==null){
+				System.out.println("Client disconnect!");
+				done = true;
+			}else{
+				//---------------------------- HERE WE HAVE A MSG -----------------------//
+				try {
+					cc.deTransformMessage(incomingMsg);
+				} catch (ParserConfigurationException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | SAXException e) {
+					e.printStackTrace();
+				}
+			}
+			}catch(IOException e){
+			System.out.println("readLine failed: " + e);
+			System.exit(1);
+			}
 		}
+
+		try{
+			in.close();
+			out.close();
+			clientSocket.close();
+		}catch(IOException e){}
+		}
+
+
+	private boolean acceptingConnection(String str) {
+
+    	boolean decision = false;
+    	if (str.startsWith("<request>") && str.endsWith("</request>")){
+    		// check if user wants to accept advanced connection
+			// block thread until decision has been made
+		}
+		else {
+			// check if user wants to accept simple connection
+			// block thread until decision has been made
+
+		}
+
+    	return decision;
 	}
 
-	try{
-            in.close();
-            out.close();
-            clientSocket.close();
-	}catch(IOException e){}
-    }
+	private void newUser() {
 
-    private boolean acceptingConnection(String str) {
+	}
 
-        boolean decision = false;
-        if (str.startsWith("<request>") && str.endsWith("</request>")){
-    	// check if user wants to accept advanced connection
-	// block thread until decision has been made
-        }else {
-	// check if user wants to accept simple connection
-	// block thread until decision has been made
-        }
+	public void newMessage(Message newMsg) {
+		msgList.add(newMsg);
+	}
 
-        return decision;
-    }
-
-    private void newUser() {
-
-    }
-
-    public void newMessage(Message newMsg) {
-	msgList.add(newMsg);
-    }
-
-    public void kill() {
+	public void kill() {
     	done = true;
-    }
+	}
 
-    public String requestKey(String text) {
-	return null;
-    }
+	public String requestKey(String text) {
+		return null;
+	}
 }

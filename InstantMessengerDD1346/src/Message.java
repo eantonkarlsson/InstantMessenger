@@ -1,16 +1,29 @@
+
+
 public class Message {
 
-    private String encryptedMsg;
+    private String msg;
+    private String xml;
+    private String user;
+    private String colorRGB;
 
-    public Message(String str){
-        encryptedMsg = str;
+    public Message(String message, String xmlMessage, String sender, String color){
+        msg = message;
+        xml = xmlMessage;
+        user = sender;
+        colorRGB = color;
     }
 
     public void UpdateText(String str) {
-        encryptedMsg = str;
+        msg = str;
     }
 
-    public String returnEncryptedText(){
-        return encryptedMsg;
+    public String returnXML(){
+        return xml;
     }
+
+    public void updateRGB(String RGB){
+        this.colorRGB = RGB;
+    }
+
 }

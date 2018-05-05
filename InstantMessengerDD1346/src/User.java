@@ -1,12 +1,14 @@
+import java.util.ArrayList;
+
 public class User {
 
     private String name;
     private boolean isSelf;
-    private String crypto;
-    private String key;
-    
-    public User(String nameIn){
-        name = nameIn;
+    private static ArrayList<User> users = new ArrayList<>();
+
+    public User (String s){
+        this.name = s;
+        users.add(this);
     }
 
     public String returnName() {
@@ -19,6 +21,16 @@ public class User {
 
     public void setName(String str) {
         name = str;
+    }
+
+    public static User stringToUser(String user) throws NullPointerException{
+        for (User u: users){
+            if (u.returnName().equals(user))
+            {
+                return u;
+            }
+        }
+        throw new NullPointerException();
     }
 
 }

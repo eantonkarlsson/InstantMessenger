@@ -2,142 +2,140 @@
 import Encryption.AESCipher;
 import Encryption.AbstractCipher;
 import Encryption.CaesarCipher;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-class Node {
-
-	private List<Node> childNodes = new ArrayList<>();
-	private Node rootNode;
-	private String element;
-	private Map<String, String> attributes = new HashMap<>();
-
-	Node() {
-		this.rootNode = this;
-	}
-	Node(Node rootNode) {
-		setRoot(rootNode);
-	}
-
-	void addChild(Node node) {
-		childNodes.add(node);
-	}
-
-	private void setRoot(Node node) {
-		rootNode = node;
-	}
-
-	void setElement(String str) {
-		element = str;
-	}
-
-	void setAttribute(String key, String value) {
-		attributes.put(key, value);
-	}
-
-	private String exportStartXML() {
-		// first part
-		StringBuilder strBuilder = new StringBuilder();
-		strBuilder.append("<");
-		strBuilder.append(element);
-		for (String str : attributes.keySet()) {
-			strBuilder.append(" ");
-			strBuilder.append(str);
-			strBuilder.append("=\"");
-			strBuilder.append(attributes.get(str));
-			strBuilder.append("\"");
-		}
-		strBuilder.append("\">");
-		for (Node node : childNodes) {
-			strBuilder.append(node.exportStartXML());
-		}
-		return strBuilder.toString();
-	}
-
-	private String exportEndXML() {
-		StringBuilder strBuilder = new StringBuilder();
-		for (Node node : childNodes) {
-			strBuilder.append(node.exportEndXML());
-		}
-		strBuilder.append("<");
-		strBuilder.append(element);
-		strBuilder.append("\">");
-		return strBuilder.toString();
-	}
-
-	public String formatXML(String str) {
-		StringBuilder strBuilder = new StringBuilder();
-		strBuilder.append(rootNode.exportStartXML());
-		strBuilder.append(str);
-		strBuilder.append(rootNode.exportEndXML());
-		return strBuilder.toString();
-	}
-}
 
 public class ChatController{
 
     private AbstractCipher encryptCipher;
     private AbstractCipher decryptCipher;
     private ArrayList<Message> messages = new ArrayList<>();
-    private Message outgoingMessage;
+    private String outgoingMessage;
     private Message incomingMessage;
     private String currentColorRGB;
-    private static User selfUser;
-	private User otherUser;
+    private static User currentUser;
+	private ArrayList<User> outgoingUsers = new ArrayList<>();
 	private String encryptionMethod;
 	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
 
 	public ChatController(User user) {
-		otherUser = user;
+		outgoingUsers.add(user);
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
 	}
 
+	public void addUser(User u){
+		outgoingUsers.add(u);
+	}
 
-	public String transformText(String str) {
 
-		Node msg = new Node();
-		Node txt = new Node(msg);
+	public String transformText(String str) throws ParserConfigurationException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, TransformerException {
 
-		msg.addChild(txt);
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+		Document doc = docBuilder.newDocument();
+		Element msg = doc.createElement("message");
+		doc.appendChild(msg);
+		Attr sender = doc.createAttribute("sender");
+		sender.setValue(currentUser.toString());
+		msg.setAttributeNode(sender);
 
-		msg.setElement("message");
-		msg.setAttribute("sender",selfUser.returnName());
-		txt.setElement("text");
-		txt.setAttribute("color",currentColorRGB);
+		Element txt = doc.createElement("text");
+		doc.appendChild(txt);
+		Attr color = doc.createAttribute("color");
+		color.setValue(currentColorRGB);
+		txt.setAttributeNode(color);
 
 		if (encryptCipher != null) {
-			Node enc = new Node(msg);
-			enc.setElement("encrypted");
-			enc.setAttribute("type", encryptCipher.encryptionType());
-			try {
-				str = encryptCipher.encrypt(str);
-				txt.addChild(enc);
-			} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-				e.printStackTrace();
-			}
+			Element enc = doc.createElement("encrypted");
+			doc.appendChild(enc);
+			Attr type = doc.createAttribute("type");
+			type.setValue(encryptCipher.toString());
+			enc.setAttributeNode(type);
+
+			str = encryptCipher.encrypt(str);
+			Text content = doc.createTextNode(str);
+			enc.appendChild(content);
+		}
+		else {
+			Text content = doc.createTextNode(str);
+			txt.appendChild(content);
 		}
 
-		return msg.formatXML(str);
+		StringWriter sw = new StringWriter();
+		TransformerFactory tf = TransformerFactory.newInstance();
+		Transformer t = tf.newTransformer();
+		t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+		t.setOutputProperty(OutputKeys.METHOD, "xml");
+		t.setOutputProperty(OutputKeys.INDENT, "yes");
+		t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		t.transform(new DOMSource(doc), new StreamResult(sw));
+
+		return sw.toString();
 
 	}
 
 	public void createMessage(String str) {
 
-		outgoingMessage = new Message(transformText(str));
-		messages.add(outgoingMessage);
+		try {
+			Message newMsg = new Message(str, transformText(str), currentUser.toString(), currentColorRGB);
+			outgoingMessage = newMsg.returnXML();
+			messages.add(newMsg);
+		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
+			e.printStackTrace();
+		}
 	}
 
-	public void deTransformMessage(String str) {
+	public void importMessage(Message msg) {
+		messages.add(msg);
+	}
 
+	public void deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		InputSource source = new InputSource(new StringReader(msg));
+		Document doc = builder.parse(source);
+		doc.getDocumentElement().normalize();
+
+		String[] content = new String[4];
+		content[0] = doc.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
+		content[1] = doc.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
+		content[2] = doc.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
+		if (content[2] == null) {
+			content[3] = doc.getElementsByTagName("text").item(0).getTextContent();
+			Message newMsg = new Message(content[3], msg, content[0], content[1]);
+			messages.add(newMsg);
+		}
+		else {
+			content[3] = doc.getElementsByTagName("encrypted").item(0).getTextContent();
+			String decryptedMsg = decryptCipher.decrypt(content[3]);
+			Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
+			messages.add(newMsg);
+		}
 	}
 
 
@@ -149,17 +147,30 @@ public class ChatController{
 
 	}
 
-	public void changeCipher(AbstractCipher cipher, String type) {
+	public void changeCipher(String type) {
 
 		if (type == "AES") {
-			cipher = new AESCipher();
+			encryptCipher = new AESCipher();
 
 		}
 		else if (type == "caesar") {
-			cipher = new CaesarCipher();
+			encryptCipher = new CaesarCipher();
 		}
 		else {
-			cipher = null;
+			encryptCipher = null;
+		}
+	}
+
+	public void changeDecryptionCipher(String type) {
+		if (type == "AES") {
+			decryptCipher = new AESCipher();
+
+		}
+		else if (type == "caesar") {
+			decryptCipher = new CaesarCipher();
+		}
+		else {
+			decryptCipher = null;
 		}
 	}
 

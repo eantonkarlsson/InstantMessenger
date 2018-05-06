@@ -184,9 +184,9 @@ public class MyFrame extends Thread{ //extends JFrame
         file = new JButton("File");
         send = new JButton("Send");
         JPanel panel = new JPanel();
-        tabs.put(panel,newtextArea);
+        tabs.put(panel, newtextArea);
         newtextArea.setEditable(false);
-        JScrollPane editorScrollPane = new JScrollPane(textArea); //scroll 
+        JScrollPane editorScrollPane = new JScrollPane(newtextArea); //scroll
         
         panel.add(newtextArea);
         panel.add(editorScrollPane);

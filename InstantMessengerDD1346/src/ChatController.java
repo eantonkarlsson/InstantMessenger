@@ -62,7 +62,7 @@ public class ChatController{
 		sw.append(msg.returnUser());
 		sw.append("]: ");
 		sw.append(msg.returnMsg());
-		sw.append("\\n");
+		sw.append("\n");
 		String s = sw.toString();
 
 		try {

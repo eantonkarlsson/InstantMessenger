@@ -22,6 +22,11 @@ public class Message {
         return xml;
     }
 
+    public String returnUser() { return user; }
+
+    public String returnMsg() { return msg; }
+
+
     public void updateRGB(String RGB){
         this.colorRGB = RGB;
     }

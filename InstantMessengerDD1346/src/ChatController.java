@@ -13,6 +13,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -37,20 +38,38 @@ public class ChatController{
     private String outgoingMessage;
     private Message incomingMessage;
     private String currentColorRGB;
-    private String currentUser;
+    private String currentName;
 	private ArrayList<User> outgoingUsers = new ArrayList<>();
 	private String encryptionMethod;
 	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
-	private JComponent chatPane;
+	private JTextPane chatPane;
 
 	public ChatController(User user) {
 		outgoingUsers.add(user);
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
-		currentUser = "test";
+		currentName = "";
 	}
 
-	public void addPanel(JComponent panel) {
+	public void updatePanel(Message msg){
+		StringWriter sw = new StringWriter();
+		javax.swing.text.Document doc = chatPane.getDocument();
+
+		sw.append("[");
+		sw.append(msg.returnUser());
+		sw.append("]: ");
+		sw.append(msg.returnMsg());
+		sw.append("\\n");
+		String s = sw.toString();
+
+		try {
+			doc.insertString(doc.getLength(), s, null);
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void addPanel(JTextPane panel) {
 		chatPane = panel;
 	}
 
@@ -61,13 +80,16 @@ public class ChatController{
 
 	public String transformText(String str) throws ParserConfigurationException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, TransformerException {
 
+		// Build XML Document with structure
+		// <message sender=name><text color=RGB> msg </text></message>
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 		Document doc = docBuilder.newDocument();
+
 		Element msg = doc.createElement("message");
 		doc.appendChild(msg);
 		Attr sender = doc.createAttribute("sender");
-		sender.setValue(currentUser.toString());
+		sender.setValue(currentName);
 		msg.setAttributeNode(sender);
 
 		Element txt = doc.createElement("text");
@@ -92,24 +114,16 @@ public class ChatController{
 			txt.appendChild(content);
 		}
 
-		StringWriter sw = new StringWriter();
-		TransformerFactory tf = TransformerFactory.newInstance();
-		Transformer t = tf.newTransformer();
-		t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-		t.setOutputProperty(OutputKeys.METHOD, "xml");
-		t.setOutputProperty(OutputKeys.INDENT, "yes");
-		t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-		t.transform(new DOMSource(doc), new StreamResult(sw));
-
-		return sw.toString();
+		return XMLHandler.XMLtoString(doc);
 
 	}
 
 	public String createMessage(String str) {
 
 		try {
-			Message newMsg = new Message(str, transformText(str), currentUser, currentColorRGB);
+			Message newMsg = new Message(str, transformText(str), currentName, currentColorRGB);
 			messages.add(newMsg);
+			updatePanel(newMsg);
 			return outgoingMessage = newMsg.returnXML();
 		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
 			e.printStackTrace();
@@ -123,31 +137,29 @@ public class ChatController{
 
 	public String deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		InputSource source = new InputSource(new StringReader(msg));
-		Document doc = builder.parse(source);
-		doc.getDocumentElement().normalize();
+		Document xml = XMLHandler.StringToXML(msg);
 
 		String[] content = new String[4];
-		content[0] = doc.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
-		content[1] = doc.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
+		content[0] = xml.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
+		content[1] = xml.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
 		try {
-			content[2] = doc.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
+			content[2] = xml.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
 		}catch (NullPointerException e){
 			content[2] = null;
 		}
 		if (content[2] == null) {
-			content[3] = doc.getElementsByTagName("text").item(0).getTextContent();
+			content[3] = xml.getElementsByTagName("text").item(0).getTextContent();
 			Message newMsg = new Message(content[3], msg, content[0], content[1]);
 			messages.add(newMsg);
+			updatePanel(newMsg);
 			return content[3];
 		}
 		else {
-			content[3] = doc.getElementsByTagName("encrypted").item(0).getTextContent();
+			content[3] = xml.getElementsByTagName("encrypted").item(0).getTextContent();
 			String decryptedMsg = decryptCipher.decrypt(content[3]);
 			Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
 			messages.add(newMsg);
+			updatePanel(newMsg);
 			return decryptedMsg;
 		}
 	}
@@ -157,9 +169,7 @@ public class ChatController{
 		currentColorRGB = RGB;
     }
 
-    public void setSelfUser(String name) {
-
-	}
+    public void setName(String name) { currentName = name; }
 
 	public void changeCipher(String type) {
 
@@ -186,20 +196,6 @@ public class ChatController{
 		else {
 			decryptCipher = null;
 		}
-	}
-
-	public static void main(String[] args) {
-		ChatController cc = new ChatController(new User("Anton"));
-		String xmlmsg = cc.createMessage("hej");
-		System.out.println(xmlmsg);
-		try {
-			String msg = cc.deTransformMessage(xmlmsg);
-			System.out.println(msg);
-		} catch (ParserConfigurationException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
-
-		//MyFrame frame = new MyFrame();
 	}
 
 }

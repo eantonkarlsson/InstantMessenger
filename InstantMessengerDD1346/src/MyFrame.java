@@ -188,8 +188,7 @@ public class MyFrame extends Thread{ //extends JFrame
 
         send.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e){
-                System.out.println(textField.getText());
-                clientThread.send("hej");
+                clientThread.send(textField.getText());
             }
 
         });
@@ -212,6 +211,7 @@ public class MyFrame extends Thread{ //extends JFrame
         colorButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Color newColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+
                 colorButton.setBackground(newColor);
             } 
         });
@@ -240,21 +240,6 @@ public class MyFrame extends Thread{ //extends JFrame
     }
      
     public void changeUser() {
-    }
-
-    public int incomingUser(String userID) {
-        Object[] options = {"Accept", "Decline"};
-        int n = JOptionPane.showOptionDialog(frame,
-                "User " + userID
-                        + " would like to connect.",
-                "Incoming connection",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[1]);
-        return n;
-
     }
 
     // run program

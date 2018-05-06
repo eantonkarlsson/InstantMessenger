@@ -7,6 +7,9 @@ public class Server extends Thread{
     private User[] users;
     private User user;
     private int port;
+    private boolean accepted; 
+    private ClientThread thread; 
+    private ChatController cc; 
 
     public Server(int port) {
         this.port = port;
@@ -31,11 +34,26 @@ public class Server extends Thread{
                 System.out.println("Accept failed:"+port);
                 System.exit(-1);
             }
-            Thread thr = new ClientThread(clientSocket);
+            ClientThread thr = new ClientThread(clientSocket);
             thr.start();
+            thread = thr; 
+            accepted = thr.returnAccepted();
+            cc = thr.returnChatController();
+            
         }
     }
 
+    public boolean returnAccepted(){
+        return accepted;
+    }
+    
+    public ClientThread returnClientThread(){
+        return thread;
+    }
+    
+    public ChatController returnChatController(){
+        return cc; 
+    }
 
     public void incomingConnection() {
     }

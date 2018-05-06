@@ -75,9 +75,9 @@ public class MyFrame extends Thread{ //extends JFrame
                 JTextField portField = new JTextField(20);
                 panel1.add(port);
                 panel1.add(portField);
-                String[] encryptions = { "None", "AES", "Caesarkrypto"};
-                JComboBox encryption = new JComboBox(encryptions);
-                panel1.add(encryption);
+               // String[] encryptions = { "None", "AES", "Caesarkrypto"};
+               // JComboBox encryption = new JComboBox(encryptions);
+               // panel1.add(encryption);
                 setSettings = new JButton("Connect");
                 panel1.add(setSettings);
                 panel1.validate();
@@ -86,7 +86,7 @@ public class MyFrame extends Thread{ //extends JFrame
                 // connect and open chat window
                 setSettings.addActionListener(new ActionListener(){
                     public void actionPerformed(ActionEvent e){
-                        if (adressField.getText().length()!=0){
+                        if (adressField.getText().length()!=0){ //skapar client
 
                             ClientThread clientThread = null;
                             try {
@@ -106,8 +106,14 @@ public class MyFrame extends Thread{ //extends JFrame
                         else {
 
 
-                            Thread thr1 = new Thread(new Server(Integer.parseInt(portField.getText())));
+                            Server thr1 = new Server(Integer.parseInt(portField.getText()));
                             thr1.start();
+                            if(thr1.returnAccepted()){
+                                ClientThread clientThread = thr1.returnClientThread();
+                                JComponent panel = makeTextPanel(clientThread);
+                                
+                                
+                            }
                             
                         //   Server server = new Server(Integer.parseInt(portField.getText()));
                             
@@ -242,24 +248,25 @@ public class MyFrame extends Thread{ //extends JFrame
     public void changeUser() {
     }
 
-    public int incomingUser(String userID) {
-        Object[] options = {"Accept", "Decline"};
-        int n = JOptionPane.showOptionDialog(frame,
-                "User " + userID
-                        + " would like to connect.",
-                "Incoming connection",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[1]);
-        return n;
+//    public int incomingUser(String userID) {
+//        Object[] options = {"Accept", "Decline"};
+//        int n = JOptionPane.showOptionDialog(frame,
+//                "User " + userID
+//                        + " would like to connect.",
+//                "Incoming connection",
+//                JOptionPane.YES_NO_CANCEL_OPTION,
+//                JOptionPane.QUESTION_MESSAGE,
+//                null,
+//                options,
+//                options[1]);
+//        return n;
 
-    }
+    
+
 
     // run program
     public static void main(String[] args) {
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
+     //   System.setProperty("apple.laf.useScreenMenuBar", "true");
         Thread thr2 = new Thread(new MyFrame());
         thr2.start();
         //MyFrame frame = new MyFrame();

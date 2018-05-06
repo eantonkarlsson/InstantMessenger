@@ -31,17 +31,28 @@ public class ClientThread extends Thread{
     private ArrayList<Message> msgList = new ArrayList<>();
     private boolean done = false;
     private boolean isRequesting = false;
+    private boolean firstTime = true;
     private ChatController cc;
     private ChatController allcc;
     private JFrame myFrame;
 
     // Konstruktorn sparar socketen lokalt
-    public ClientThread(Socket sock){
+    public ClientThread(Socket sock, boolean requestor){
 		clientSocket = sock;
+		isRequesting = requestor;
 	}
 
     public void addFrame(JFrame frame){
     	myFrame = frame;
+	}
+
+	public void addPanel(JTextPane panel){
+    	cc.addPanel(panel);
+	}
+
+	public void addController(ChatController chatController)
+	{
+		cc = chatController;
 	}
 
     public void run(){
@@ -60,52 +71,58 @@ public class ClientThread extends Thread{
 			System.exit(1);
 		}
 
-		System.out.println("Connection Established: "
-				   + clientSocket.getInetAddress());
+		if (firstTime) {
+			if (isRequesting) {
+				requestAccess("a");
+			}
 
-		if (isRequesting) {
-			while (true) {
+			System.out.println("Connection Established: "
+					+ clientSocket.getInetAddress());
 
-				try {
-					String firstMsg = in.readLine();
-					if (firstMsg.equals("")) {
-						// print response if simple user
-						out.println("Awaiting response on connection. New messages will not be received.");
+			if (!isRequesting) {
+				boolean loopMe = false;
+				while (!loopMe) {
+
+					try {
+						String firstMsg = in.readLine();
+						if (firstMsg.equals("")) {
+							// print response if simple user
+							out.println("Awaiting response on connection. New messages will not be received.");
+						}
+						if (acceptingConnection(firstMsg)) {
+							out.println("<request reply=\"yes\"> </request>");
+							loopMe = true;
+						} else {
+							out.println("<request reply=\"no\"> </request>");
+							loopMe = true;
+							done = true;
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
-					if (acceptingConnection(firstMsg)) {
-						out.println("<request reply=yes></request>");
-						break;
-					} else {
-						out.println("<request reply=no></request>");
-						done = true;
-						break;
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
+
 				}
-
 			}
 		}
+		firstTime = false;
 
 		while(!done){
 
 			try{
-			String incomingMsg = in.readLine();
-			if(incomingMsg==null){
-				System.out.println("Client disconnect!");
-				done = true;
-			}else{
-				//---------------------------- HERE WE HAVE A MSG -----------------------//
-				try {
+				String incomingMsg = in.readLine();
+				if(incomingMsg==null){
+					System.out.println("Client disconnect!");
+					done = true;
+				}else{
+
 					String newMsg = cc.deTransformMessage(incomingMsg);
 					System.out.println(newMsg);
-				} catch (ParserConfigurationException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | SAXException e) {
-					e.printStackTrace();
-				}
 			}
 			}catch(IOException e){
 			System.out.println("readLine failed: " + e);
 			System.exit(1);
+			} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | ParserConfigurationException | SAXException | BadPaddingException | IllegalBlockSizeException e) {
+				e.printStackTrace();
 			}
 		}
 
@@ -130,10 +147,10 @@ public class ClientThread extends Thread{
 					JOptionPane.QUESTION_MESSAGE,
 					null,
 					options,
-					options[1]);
+					options[0]);
 			if (n == JOptionPane.YES_OPTION){
 				decision = true;
-				cc = new ChatController(new User("anton"));
+				// cc = new ChatController(new User("anton"));
 			}
 			else{
 				decision = false;
@@ -152,29 +169,44 @@ public class ClientThread extends Thread{
 
 	}
 
-	public ChatController requestAccess(String userID) {
+	public ChatController requestAccessWrapper(String userID)
+	{
+		requestAccess(userID);
+		return cc;
+
+	}
+
+	public void requestAccess(String userID) {
+
 		try{
 			out = new PrintWriter(clientSocket.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(
+					clientSocket.getInputStream()));
+			out.println("<request>" + userID + "</request>");
 		}catch(IOException e){
 			System.out.println("getOutputStream failed: " + e);
 			System.exit(1);
 		}
-    	out.println("<request>" + userID + "</request>");
-		while (true) {
+
+		boolean loopMe = true;
+		while (loopMe) {
 			try {
 				String msg = in.readLine();
 				if (msg.startsWith("<request") && msg.endsWith("</request>")) {
 					Document xml = XMLHandler.StringToXML(msg);
 					String response = xml.getElementsByTagName("request").item(0).getAttributes().item(0).toString();
+					System.out.println(response);
+					if (response.endsWith("yes\"")){
+						// cc = new ChatController(new User(userID));
+						// allcc = new ChatController(new User("hi"));
+						loopMe = false;
+						firstTime = false;
 
-					if (response == "yes"){
-						cc = new ChatController(new User(userID));
-						allcc = new ChatController(new User("hi"));
-						return cc;
 					}
-					else{
+					else if (response == "no"){
+						loopMe = false;
+						firstTime = false;
 						done = true;
-						return null;
 					}
 				}
 			} catch (IOException e) {

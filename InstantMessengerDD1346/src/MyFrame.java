@@ -4,6 +4,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeEvent;
@@ -28,7 +31,9 @@ public class MyFrame extends Thread{ //extends JFrame
     private JTabbedPane tabbedPane;
     private JTextField nameField;
     private JButton setSettings;
+    public HashMap<JPanel, JTextPane> tabs = new HashMap<JPanel, JTextPane>();
     private boolean toggledColor = false;
+    private MyFrame myFrame = this;
     
     public void run() {    
 //        menuBar = new JMenuBar();
@@ -91,23 +96,26 @@ public class MyFrame extends Thread{ //extends JFrame
                             ClientThread clientThread = null;
                             try {
                                 clientThread = new ClientThread(new Socket(adressField.getText(),
-                                    Integer.parseInt(portField.getText())));
+                                    Integer.parseInt(portField.getText())), true);
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                             }
+                            ChatController cc = new ChatController(myFrame, clientThread);
+                            clientThread.addController(cc);
                             clientThread.addFrame(frame);
+                            JPanel temp = makeTextPanel(clientThread);
+                            clientThread.addPanel(tabs.get(temp));
                             clientThread.start();
-                            ChatController cc = clientThread.requestAccess(currentUser.returnName());
-                            JComponent panel = makeTextPanel(clientThread);
-                            cc.addPanel(panel);
 
                         }
                         // connect as server
                         else {
 
 
-                            Thread thr1 = new Thread(new Server(Integer.parseInt(portField.getText())));
+                            Server thr1 = new Server(Integer.parseInt(portField.getText()));
+                            thr1.addFrame(myFrame);
                             thr1.start();
+
                             
                         //   Server server = new Server(Integer.parseInt(portField.getText()));
                             
@@ -143,9 +151,9 @@ public class MyFrame extends Thread{ //extends JFrame
        
     } 
 
-    public JComponent makeTextPanel(ClientThread clientThread) {
+    public JPanel makeTextPanel(ClientThread clientThread) {
 
-        JComponent panel = makeTextPanelInternal(clientThread);
+        JPanel panel = makeTextPanelInternal(clientThread);
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setOpaque(false);
         JLabel titleLbl = new JLabel("Tab");
@@ -167,19 +175,20 @@ public class MyFrame extends Thread{ //extends JFrame
     }
 
     // create tab
-    public JComponent makeTextPanelInternal(ClientThread clientThread) {
+    public JPanel makeTextPanelInternal(ClientThread clientThread) {
 
-        textArea = new JTextPane();
+        JTextPane newtextArea = new JTextPane();
         textField = new JTextField(30);
-        textArea.setPreferredSize(new Dimension(1000,550));
+        newtextArea.setPreferredSize(new Dimension(1000,550));
         JButton colorButton = new JButton("Color");
         file = new JButton("File");
         send = new JButton("Send");
         JPanel panel = new JPanel();
-        textArea.setEditable(false);
+        tabs.put(panel,newtextArea);
+        newtextArea.setEditable(false);
         JScrollPane editorScrollPane = new JScrollPane(textArea); //scroll 
         
-        panel.add(textArea);
+        panel.add(newtextArea);
         panel.add(editorScrollPane);
         panel.add(textField, BorderLayout.PAGE_END);
         panel.add(file, BorderLayout.PAGE_END);

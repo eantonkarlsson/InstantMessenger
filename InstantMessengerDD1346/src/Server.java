@@ -1,4 +1,5 @@
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.*;
 
@@ -7,6 +8,7 @@ public class Server extends Thread{
     private User[] users;
     private User user;
     private int port;
+    private MyFrame mainFrame;
 
     public Server(int port) {
         this.port = port;
@@ -17,6 +19,11 @@ public class Server extends Thread{
             System.out.println("Could not listen on port:" + port);
             System.exit(-1);
         }
+    }
+
+    public void addFrame(MyFrame myFrame)
+    {
+        mainFrame = myFrame;
     }
     
     public void run(){
@@ -31,7 +38,11 @@ public class Server extends Thread{
                 System.out.println("Accept failed:"+port);
                 System.exit(-1);
             }
-            Thread thr = new ClientThread(clientSocket);
+            ClientThread thr = new ClientThread(clientSocket, false);
+            ChatController cc = new ChatController(mainFrame, thr);
+            JPanel temp = mainFrame.makeTextPanel(thr);
+            thr.addController(cc);
+            thr.addPanel(mainFrame.tabs.get(temp));
             thr.start();
         }
     }

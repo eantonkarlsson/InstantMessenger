@@ -43,12 +43,15 @@ public class ChatController{
 	private String encryptionMethod;
 	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
 	private JTextPane chatPane;
+	private MyFrame myFrame;
+	private ClientThread clientThread;
 
-	public ChatController(User user) {
-		outgoingUsers.add(user);
+	public ChatController(MyFrame mainFrame, ClientThread thread) {
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
 		currentName = "";
+		myFrame = mainFrame;
+		clientThread = thread;
 	}
 
 	public void updatePanel(Message msg){
@@ -128,7 +131,7 @@ public class ChatController{
 		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
 			e.printStackTrace();
 		}
-		return "";
+		return "99";
 	}
 
 	public void importMessage(Message msg) {

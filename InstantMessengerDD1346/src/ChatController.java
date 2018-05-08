@@ -2,6 +2,7 @@
 import Encryption.AESCipher;
 import Encryption.AbstractCipher;
 import Encryption.CaesarCipher;
+import java.awt.Color;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -29,7 +30,13 @@ import java.io.StringWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import javax.swing.text.Style;
+import java.awt.Color;
 
+import javax.swing.JTextPane;
+
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 public class ChatController{
 
     private AbstractCipher encryptCipher;
@@ -52,21 +59,32 @@ public class ChatController{
 
 	public void updatePanel(Message msg){
 		StringWriter sw = new StringWriter();
-		javax.swing.text.Document doc = chatPane.getDocument();
-
+		//javax.swing.text.Document doc = chatPane.getDocument();
+                StyledDocument doc = (StyledDocument) chatPane.getDocument();
 		sw.append("[");
 		sw.append(msg.returnUser());
 		sw.append("]: ");
 		sw.append(msg.returnMsg());
 		sw.append("\n");
 		String s = sw.toString();
+                Style style = doc.addStyle("StyleName", null);
+                StyleConstants.setForeground(style, msg.returnColor());
 
 		try {
-			doc.insertString(doc.getLength(), s, null);
+			doc.insertString(doc.getLength(), s, style);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
 	}
+
+        public void printDisconnect(String str){
+            javax.swing.text.Document doc = chatPane.getDocument();
+            try {
+                    doc.insertString(doc.getLength(), str, null);
+		} catch (BadLocationException e) {
+                    e.printStackTrace();
+		}
+        }
 
 	public void addPanel(JTextPane panel) {
 		chatPane = panel;
@@ -137,31 +155,42 @@ public class ChatController{
 
 	public Message deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 
-		Document xml = XMLHandler.StringToXML(msg);
+        if (msg.contains("<disconnect/>")){
+            System.out.println(msg);
+            msg = msg.replace("<disconnect/>", "");
+            printDisconnect(msg);
+            return new Message("Parser error", "XML error", "Error", "Error");
 
-		String[] content = new String[4];
-		content[0] = xml.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
-		content[1] = xml.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
-		try {
-			content[2] = xml.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
-		}catch (NullPointerException e){
-			content[2] = null;
-		}
-		if (content[2] == null) {
-			content[3] = xml.getElementsByTagName("text").item(0).getTextContent();
-			Message newMsg = new Message(content[3], msg, content[0], content[1]);
-			messages.add(newMsg);
-			updatePanel(newMsg);
-			return newMsg;
-		}
-		else {
-			content[3] = xml.getElementsByTagName("encrypted").item(0).getTextContent();
-			String decryptedMsg = decryptCipher.decrypt(content[3]);
-			Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
-			messages.add(newMsg);
-			updatePanel(newMsg);
-			return newMsg;
-		}
+        }else{
+            Document xml = XMLHandler.StringToXML(msg);
+
+            String[] content = new String[4];
+            content[0] = xml.getElementsByTagName("message").item(0).getAttributes().item(0).toString();
+            content[0] = content[0].substring(8,content[0].length()-1);
+            content[1] = xml.getElementsByTagName("text").item(0).getAttributes().item(0).toString();
+            content[1] = content[1].substring(content[1].length()-8,content[1].length()-1);
+
+            try {
+                content[2] = xml.getElementsByTagName("encrypted").item(0).getAttributes().item(0).toString();
+            }catch (NullPointerException e){
+                content[2] = null;
+            }
+            if (content[2] == null) {
+                content[3] = xml.getElementsByTagName("text").item(0).getTextContent();
+                Message newMsg = new Message(content[3], msg, content[0], content[1]);
+                messages.add(newMsg);
+                updatePanel(newMsg);
+			    return newMsg;
+            }
+            else {
+                content[3] = xml.getElementsByTagName("encrypted").item(0).getTextContent();
+                String decryptedMsg = decryptCipher.decrypt(content[3]);
+                Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
+                messages.add(newMsg);
+                updatePanel(newMsg);
+			    return newMsg;
+            }
+        }
 	}
 
 

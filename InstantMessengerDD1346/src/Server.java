@@ -59,13 +59,13 @@ public class Server extends Thread{
 
             if (all == null){
                 allCC = new ChatController();
-                all = mainFrame.makeTextPanel(allThr);
+                all = mainFrame.makeTextPanel(allThr, allCC);
                 allThr.addController(allCC);
                 allThr.addPanel(mainFrame.tabs.get(all));
 
             }
             allThr.addController(allCC);
-            JPanel temp = mainFrame.makeTextPanel(thr);
+            JPanel temp = mainFrame.makeTextPanel(thr, cc);
             thr.addController(cc);
             thr.addPanel(mainFrame.tabs.get(temp));
 

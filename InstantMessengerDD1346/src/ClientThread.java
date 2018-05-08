@@ -1,10 +1,13 @@
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
@@ -34,7 +37,7 @@ public class ClientThread extends Thread{
     private JFrame myFrame;
     private boolean allChat;
     private Server serv;
-  
+
     
 
     // Konstruktorn sparar socketen lokalt
@@ -65,6 +68,8 @@ public class ClientThread extends Thread{
 
     public void run(){
 
+
+
         try{
             out = new PrintWriter(clientSocket.getOutputStream(), true);
         }catch(IOException e){
@@ -85,7 +90,7 @@ public class ClientThread extends Thread{
 			try{
 				String incomingMsg = in.readLine();
 				if(incomingMsg==null){
-					System.out.println("Client disconnect!");
+					System.out.println(cc.returnName()+" disconnected!");
 					done = true;
 				}else{
 
@@ -219,7 +224,7 @@ public class ClientThread extends Thread{
 						firstTime = false;
 
 					}
-					else if (response == "no"){
+					else if (response.endsWith("no\"")){
 						loopMe = false;
 						firstTime = false;
 						done = true;
@@ -236,9 +241,15 @@ public class ClientThread extends Thread{
             out.println(outgoing);
 	}
 
-	public void kill() {
-    	done = true;
-	}
+        public void disconnect(){
+            String msg = (cc.returnName()+" logged out"+" <disconnect/>");
+            out.println(msg);
+
+        }
+
+
+
+
 
 	public String requestKey(String text) {
 		return null;

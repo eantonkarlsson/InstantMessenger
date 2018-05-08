@@ -116,6 +116,8 @@ public class ClientThread extends Thread{
 				String incomingMsg = in.readLine();
 				if(incomingMsg==null){
 					System.out.println(cc.returnName()+" disconnected!");
+                                        cc.printDisconnect(cc.returnName()+" disconnected!");
+                                      
                                       
                                         
                                         

@@ -42,6 +42,7 @@ public class MyFrame extends Thread{ //extends JFrame
         
         // create startpage
         frame = new JFrame();
+        frame.setLayout(new BorderLayout());
         panel1 = new JPanel();
         JLabel label = new JLabel("Name:"); 
         nameField = new JTextField(20);
@@ -118,8 +119,7 @@ public class MyFrame extends Thread{ //extends JFrame
                 });    
             }
         });       
-           
-                
+                  
         frame.setPreferredSize(new Dimension(750,750));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         frame.pack();
@@ -155,23 +155,29 @@ public class MyFrame extends Thread{ //extends JFrame
 
         JTextPane newtextArea = new JTextPane();
         textField = new JTextField(30);
-        newtextArea.setPreferredSize(new Dimension(700,550));
+        newtextArea.setPreferredSize(new Dimension(500,500));
         JScrollPane editorScrollPane = new JScrollPane(newtextArea); //scroll
-        editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        //editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JButton colorButton = new JButton("Color");
         //file = new JButton("File");
         send = new JButton("Send");
         JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+    
+        
+        panel.setBounds(0, 0, 600, 600);
+        panel.setPreferredSize(new Dimension(600,600));
         tabs.put(panel, newtextArea);
         newtextArea.setEditable(false);
         
+        panel.add(editorScrollPane, BorderLayout.CENTER);
+        JPanel subPanel = new JPanel();
         
-        panel.add(newtextArea);
-        panel.add(editorScrollPane);
-        panel.add(textField, BorderLayout.PAGE_END);
+        subPanel.add(textField);
         //panel.add(file, BorderLayout.PAGE_END);
-        panel.add(colorButton, BorderLayout.PAGE_END);
-        panel.add(send, BorderLayout.PAGE_END);
+        subPanel.add(colorButton);
+        subPanel.add(send);
+        panel.add(subPanel, BorderLayout.SOUTH); 
 
         send.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e){
@@ -240,6 +246,10 @@ public class MyFrame extends Thread{ //extends JFrame
         Thread thr2 = new Thread(new MyFrame());
         thr2.start();
         //MyFrame frame = new MyFrame();
+    }
+
+    void add(JScrollPane editorScrollPane) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 

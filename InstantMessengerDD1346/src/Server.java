@@ -27,8 +27,7 @@ public class Server extends Thread{
         }
     }
 
-    public void addFrame(MyFrame myFrame)
-    {
+    public void addFrame(MyFrame myFrame){
         mainFrame = myFrame;
     }
     
@@ -53,6 +52,7 @@ public class Server extends Thread{
             ClientThread thr = new ClientThread(clientSocket, false, false);
             ClientThread allThr = new ClientThread(allClientSocket, false, true);
             thr.setServer(this);
+            //multi-chat
             allThr.setServer(this);
             allThreads.add(allThr);
             ChatController cc = new ChatController();
@@ -71,8 +71,7 @@ public class Server extends Thread{
 
             thr.startWrapper(false);
             allThr.startWrapper(false);
-
-            
+           
         }
     }
 
@@ -80,20 +79,6 @@ public class Server extends Thread{
         for (ClientThread thr: allThreads){
             thr.send(msg);
         }
-    }
-
-    public void echo(Message msg){
-
-    }
-
-
-    public void incomingConnection() {
-    }
-
-    public void incomingFile() {
-    }
-
-    public void addUser() {
     }
 
 }

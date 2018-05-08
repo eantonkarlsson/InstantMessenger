@@ -32,11 +32,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import javax.swing.text.Style;
 import java.awt.Color;
-
 import javax.swing.JTextPane;
-
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+
 public class ChatController{
 
     private AbstractCipher encryptCipher;
@@ -51,110 +50,111 @@ public class ChatController{
     private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
     private JTextPane chatPane;
 
-	public ChatController() {
-		encryptionMethod = "none";
-		currentColorRGB = "#000000";
-		currentName = MyFrame.returnName();
-	}
+    public ChatController() {
+            encryptionMethod = "none";
+            currentColorRGB = "#000000";
+            currentName = MyFrame.returnName();
+    }
 
-	public void updatePanel(Message msg){
-		StringWriter sw = new StringWriter();
-		//javax.swing.text.Document doc = chatPane.getDocument();
-                StyledDocument doc = (StyledDocument) chatPane.getDocument();
-		sw.append("[");
-		sw.append(msg.returnUser());
-		sw.append("]: ");
-		sw.append(msg.returnMsg());
-		sw.append("\n");
-		String s = sw.toString();
-                Style style = doc.addStyle("StyleName", null);
-                StyleConstants.setForeground(style, msg.returnColor());
+    //prints message on textarea
+    public void updatePanel(Message msg){
+        StringWriter sw = new StringWriter();
+        StyledDocument doc = (StyledDocument) chatPane.getDocument();
+        sw.append("[");
+        sw.append(msg.returnUser());
+        sw.append("]: ");
+        sw.append(msg.returnMsg());
+        sw.append("\n");
+        String s = sw.toString();
+        Style style = doc.addStyle("StyleName", null);
+        StyleConstants.setForeground(style, msg.returnColor());
 
-		try {
-			doc.insertString(doc.getLength(), s, style);
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-		}
-	}
+        try {
+            doc.insertString(doc.getLength(), s, style);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
 
-        public void printDisconnect(String str){
-            javax.swing.text.Document doc = chatPane.getDocument();
-            try {
-                    doc.insertString(doc.getLength(), str, null);
-		} catch (BadLocationException e) {
-                    e.printStackTrace();
-		}
+    //prints disconnect message
+    public void printDisconnect(String str){
+        javax.swing.text.Document doc = chatPane.getDocument();
+        try {
+            doc.insertString(doc.getLength(), str, null);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addPanel(JTextPane panel) {
+        chatPane = panel;
+    }
+
+    public void addUser(User u){
+        outgoingUsers.add(u);
+    }
+
+    public String transformText(String str) throws ParserConfigurationException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, TransformerException {
+
+        // Build XML Document with structure
+        // <message sender=name><text color=RGB> msg </text></message>
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.newDocument();
+
+        Element msg = doc.createElement("message");
+        doc.appendChild(msg);
+        Attr sender = doc.createAttribute("sender");
+        sender.setValue(currentName);
+        msg.setAttributeNode(sender);
+
+        Element txt = doc.createElement("text");
+        msg.appendChild(txt);
+        Attr color = doc.createAttribute("color");
+        color.setValue(currentColorRGB);
+        txt.setAttributeNode(color);
+
+        if (encryptCipher != null) {
+            Element enc = doc.createElement("encrypted");
+            doc.appendChild(enc);
+            Attr type = doc.createAttribute("type");
+            type.setValue(encryptCipher.toString());
+            enc.setAttributeNode(type);
+
+            str = encryptCipher.encrypt(str);
+            Text content = doc.createTextNode(str);
+            enc.appendChild(content);
+        }
+        else {
+            Text content = doc.createTextNode(str);
+            txt.appendChild(content);
         }
 
-	public void addPanel(JTextPane panel) {
-		chatPane = panel;
-	}
+        return XMLHandler.XMLtoString(doc);
 
-	public void addUser(User u){
-		outgoingUsers.add(u);
-	}
+    }
 
-    
+    // create a message
+    public Message createMessage(String str) {
 
-	public String transformText(String str) throws ParserConfigurationException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, TransformerException {
+        try {
+            Message newMsg = new Message(str, transformText(str), currentName, currentColorRGB);
+            messages.add(newMsg);
+            // updatePanel(newMsg);
+                return newMsg;
+        } catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
+            e.printStackTrace();
+        }
+        return new Message("Parser error", "Encryption error", currentName, currentColorRGB);
+    }
 
-		// Build XML Document with structure
-		// <message sender=name><text color=RGB> msg </text></message>
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-		Document doc = docBuilder.newDocument();
+    public void importMessage(Message msg) {
+        messages.add(msg);
+    }
 
-		Element msg = doc.createElement("message");
-		doc.appendChild(msg);
-		Attr sender = doc.createAttribute("sender");
-		sender.setValue(currentName);
-		msg.setAttributeNode(sender);
-
-		Element txt = doc.createElement("text");
-		msg.appendChild(txt);
-		Attr color = doc.createAttribute("color");
-		color.setValue(currentColorRGB);
-		txt.setAttributeNode(color);
-
-		if (encryptCipher != null) {
-			Element enc = doc.createElement("encrypted");
-			doc.appendChild(enc);
-			Attr type = doc.createAttribute("type");
-			type.setValue(encryptCipher.toString());
-			enc.setAttributeNode(type);
-
-			str = encryptCipher.encrypt(str);
-			Text content = doc.createTextNode(str);
-			enc.appendChild(content);
-		}
-		else {
-			Text content = doc.createTextNode(str);
-			txt.appendChild(content);
-		}
-
-		return XMLHandler.XMLtoString(doc);
-
-	}
-
-	public Message createMessage(String str) {
-
-		try {
-			Message newMsg = new Message(str, transformText(str), currentName, currentColorRGB);
-			messages.add(newMsg);
-			// updatePanel(newMsg);
-			return newMsg;
-		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
-			e.printStackTrace();
-		}
-		return new Message("Parser error", "Encryption error", currentName, currentColorRGB);
-	}
-
-	public void importMessage(Message msg) {
-		messages.add(msg);
-	}
-
-	public Message deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-
+    //converts xml to message
+    public Message deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+        //if disconnect message
         if (msg.contains("<disconnect/>")){
             System.out.println(msg);
             msg = msg.replace("<disconnect/>", "");
@@ -195,46 +195,38 @@ public class ChatController{
 
 
     public void setColor(String RGB) {
-		currentColorRGB = RGB;
+	currentColorRGB = RGB;
     }
 
-    public void setName(String name) { currentName = name; }
+    public void setName(String name) { 
+        currentName = name; 
+    }
     
     public String returnName(){
         return currentName; 
     }
 
 
-public void setSelfUser(String name) {
-
-    }
-
     public void changeCipher(String type) {
-                if (type == "AES") {
-			encryptCipher = new AESCipher();
-
-		
-
-		}
-		else if (type == "caesar") {
-			decryptCipher = new CaesarCipher();
-		}
-		else {
-			decryptCipher = null;
-		}
-	}
+        if (type == "AES") {
+            encryptCipher = new AESCipher();
+        }
+        else if (type == "caesar") {
+            decryptCipher = new CaesarCipher();
+        }
+        else {
+            decryptCipher = null;
+        }
+    }
     public void changeDecryptionCipher(String type) {
-		if (type == "AES") {
-			decryptCipher = new AESCipher();
-
-		
-
-            }
-            else if (type == "caesar") {
-                    decryptCipher = new CaesarCipher();
-            }
-            else {
-                    decryptCipher = null;
-            }
+        if (type == "AES") {
+            decryptCipher = new AESCipher();
+        }
+        else if (type == "caesar") {
+            decryptCipher = new CaesarCipher();
+        }
+        else {
+            decryptCipher = null;
+        }
     }
 }

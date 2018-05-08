@@ -85,7 +85,7 @@ public class MyFrame extends Thread{ //extends JFrame
                 // connect and open chat window
                 setSettings.addActionListener(new ActionListener(){
                     public void actionPerformed(ActionEvent e){
-                        if (adressField.getText().length()!=0){ //skapar client
+                        if (adressField.getText().length()!=0){ //create client
 
                             ClientThread clientThread = null;
                             ClientThread allClientThread = null;
@@ -117,16 +117,9 @@ public class MyFrame extends Thread{ //extends JFrame
                         }
                         // connect as server
                         else {
-
-
                             Server thr1 = new Server(Integer.parseInt(portField.getText()));
                             thr1.addFrame(myFrame);
-                            thr1.start();
-
-                            
-                        //   Server server = new Server(Integer.parseInt(portField.getText()));
-                            
-                             
+                            thr1.start();   
                         }
                     }
                 
@@ -141,6 +134,7 @@ public class MyFrame extends Thread{ //extends JFrame
        
     } 
 
+     // add titel to tabs
     public JPanel makeTextPanel(ClientThread clientThread, ChatController cc) {
 
         JPanel panel = makeTextPanelInternal(clientThread, cc);
@@ -172,7 +166,6 @@ public class MyFrame extends Thread{ //extends JFrame
         JTextField newTextField = new JTextField(30);
         newtextArea.setPreferredSize(new Dimension(500,500));
         JScrollPane editorScrollPane = new JScrollPane(newtextArea); //scroll
-        //editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JButton colorButton = new JButton("Color");
         //file = new JButton("File");
         JButton newSend = new JButton("Send");
@@ -240,7 +233,6 @@ public class MyFrame extends Thread{ //extends JFrame
         titlePanel.add(titleLbl);
         JButton closeButton = new JButton("x");
         closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));    
-
         closeButton.addMouseListener(new MouseAdapter(){
 
             public void mouseClicked(MouseEvent e){
@@ -251,10 +243,6 @@ public class MyFrame extends Thread{ //extends JFrame
 
         return titlePanel;
     }
-     
-    public void changeUser() {
-    }
-    
     public static String returnName(){
         return name; 
     }
@@ -263,15 +251,11 @@ public class MyFrame extends Thread{ //extends JFrame
 
     // run program
     public static void main(String[] args) {
-     //   System.setProperty("apple.laf.useScreenMenuBar", "true");
         Thread thr2 = new Thread(new MyFrame());
         thr2.start();
-        //MyFrame frame = new MyFrame();
+    
     }
 
-    void add(JScrollPane editorScrollPane) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
 
 }

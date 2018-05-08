@@ -35,14 +35,21 @@ public class ClientThread extends Thread{
     private ChatController cc;
     private ChatController allcc;
     private JFrame myFrame;
-  
+    private boolean allChat;
+    private Server serv;
+
     
 
     // Konstruktorn sparar socketen lokalt
-    public ClientThread(Socket sock, boolean requestor){
+    public ClientThread(Socket sock, boolean requestor, boolean isAllChat){
 		clientSocket = sock;
 		isRequesting = requestor;
+		allChat = isAllChat;
 	}
+
+	public void acceptConnection() {firstTime = false;}
+
+	public void setServer(Server server){ serv = server; }
 
     public void addFrame(JFrame frame){
     	myFrame = frame;
@@ -57,9 +64,11 @@ public class ClientThread extends Thread{
 		cc = chatController;
 	}
 
+	public ChatController returnController(){ return cc; }
+
     public void run(){
-        
-        
+
+
 
         try{
             out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -73,42 +82,8 @@ public class ClientThread extends Thread{
         }catch(IOException e){
             System.out.println("getInputStream failed: " + e);
             System.exit(1);
-        }
-
-		if (firstTime) {
-			if (isRequesting) {
-				requestAccess(cc.returnName());
-			}
-
-			System.out.println("Connection Established: "
-					+ clientSocket.getInetAddress());
-
-			if (!isRequesting) {
-				boolean loopMe = false;
-				while (!loopMe) {
-
-					try {
-						String firstMsg = in.readLine();
-						if (firstMsg.equals("")) {
-							// print response if simple user
-							out.println("Awaiting response on connection. New messages will not be received.");
-						}
-						if (acceptingConnection(firstMsg)) {
-							out.println("<request reply=\"yes\"> </request>");
-							loopMe = true;
-						} else {
-							out.println("<request reply=\"no\"> </request>");
-							loopMe = true;
-							done = true;
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
-				}
-			}
 		}
-		firstTime = false;
+
 
 		while(!done){
 
@@ -124,8 +99,13 @@ public class ClientThread extends Thread{
 					done = true;
 				}else{
 
-					String newMsg = cc.deTransformMessage(incomingMsg);
-					
+					Message newMsg = cc.deTransformMessage(incomingMsg);
+					if (allChat){
+						serv.sendToAll(newMsg);
+					}
+					else if (serv != null){
+						send(newMsg);
+					}
 			}
 			}catch(IOException e){
 			System.out.println("readLine failed: " + e);
@@ -134,28 +114,64 @@ public class ClientThread extends Thread{
 				e.printStackTrace();
 			}
 		}
-                
-          //      Runtime.getRuntime().addShutdownHook(new Thread() {
-          //          public void run() {
-          //              out.println(cc.returnName()+"logged out"+"<disconnect/>");
-                
-          //          }
-          //      });
 
 		try{
 			in.close();
 			out.close();
 			clientSocket.close();
-		}catch(IOException e){}
-                
-                
+		}catch(IOException e){
+			e.printStackTrace();
+		}
 		}
 
+	public void startWrapper(boolean isRequesting){
+		try{
+			out = new PrintWriter(clientSocket.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(
+					clientSocket.getInputStream()));
+		}catch(IOException e){
+			System.out.println("getOutputStream failed: " + e);
+			System.exit(1);
+		}
+		if (isRequesting) {
+			requestAccess(cc.returnName());
+		}
+		else {
+			long endTime = System.currentTimeMillis() + 3000;
+			while (firstTime) {
+				// Assume simple user if no request message within 3 seconds
+				if (System.currentTimeMillis() > endTime) {
+					if (incomingConnection("")) {
+						out.println("<request reply=\"yes\"> </request>");
+						firstTime = false;
+					} else {
+						out.println("<request reply=\"no\"> </request>");
+						done = true;
+						firstTime = false;
+					}
+				} else {
+					try {
+						String firstMsg = in.readLine();
+						if (incomingConnection(firstMsg)) {
+							out.println("<request reply=\"yes\"> </request>");
+							firstTime = false;
+						} else {
+							out.println("<request reply=\"no\"> </request>");
+							done = true;
+							firstTime = false;
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				this.start();
+			}
+		}
+	}
 
-    private boolean acceptingConnection(String str) {
+    private boolean incomingConnection(String str) {
 
-    	boolean decision = false;
-    	if (str.startsWith("<request>") && str.endsWith("</request>")){
+		if (str.startsWith("<request>") && str.endsWith("</request>")){
 			Object[] options = {"Accept", "Decline"};
 			int n = JOptionPane.showOptionDialog(myFrame,
 					"User " + str.substring(9, str.length()-10)
@@ -166,21 +182,20 @@ public class ClientThread extends Thread{
 					null,
 					options,
 					options[0]);
-			if (n == JOptionPane.YES_OPTION){
-				decision = true;
-				// cc = new ChatController(new User("anton"));
-			}
-			else{
-				decision = false;
-			}
+			return n == JOptionPane.YES_OPTION;
 		}
 		else {
-			// check if user wants to accept simple connection
-			// block thread until decision has been made
-
+			Object[] options = {"Accept", "Decline"};
+			int n = JOptionPane.showOptionDialog(myFrame,
+					"A simple user would like to connect.",
+					"Incoming connection",
+					JOptionPane.YES_NO_CANCEL_OPTION,
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					options,
+					options[0]);
+			return n == JOptionPane.YES_OPTION;
         }
-
-    	return decision;
 	}
         
 
@@ -198,16 +213,7 @@ public class ClientThread extends Thread{
 
 	public void requestAccess(String userID) {
 
-		try{
-			out = new PrintWriter(clientSocket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-			out.println("<request>" + userID + "</request>");
-		}catch(IOException e){
-			System.out.println("getOutputStream failed: " + e);
-			System.exit(1);
-		}
-
+		out.println("<request>" + userID + "</request>");
 		boolean loopMe = true;
 		while (loopMe) {
 			try {
@@ -235,20 +241,20 @@ public class ClientThread extends Thread{
 		}
 	}
 
-	public void send(String newMsg) {
-            String outgoing = cc.createMessage(newMsg);
+	public void send(Message newMsg) {
+            String outgoing = newMsg.returnXML();
             out.println(outgoing);
 	}
-        
+
         public void disconnect(){
             String msg = (cc.returnName()+" logged out"+" <disconnect/>");
             out.println(msg);
-            
+
         }
 
-	
-        
-       
+
+
+
 
 	public String requestKey(String text) {
 		return null;

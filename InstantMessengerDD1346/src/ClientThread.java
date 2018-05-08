@@ -1,9 +1,13 @@
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
@@ -26,10 +30,11 @@ public class ClientThread extends Thread{
     private BufferedReader in;
     private ArrayList<Message> msgList = new ArrayList<>();
     private boolean done = false;
+    private boolean isRequesting = true;
     private ChatController cc;
     private ChatController allcc;
     private JFrame myFrame;
-    private boolean accepted = false; 
+  
     
 
     // Konstruktorn sparar socketen lokalt
@@ -39,11 +44,9 @@ public class ClientThread extends Thread{
 
     public void addFrame(JFrame frame){
     	myFrame = frame;
-	}
-    
-    public boolean returnAccepted(){
-        return accepted; 
     }
+    
+  
     
     public ChatController returnChatController(){
         return cc; 
@@ -52,54 +55,52 @@ public class ClientThread extends Thread{
     public void run(){
 
         try{
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
         }catch(IOException e){
-                System.out.println("getOutputStream failed: " + e);
-                System.exit(1);
+            System.out.println("getOutputStream failed: " + e);
+            System.exit(1);
         }
         try{
-                in = new BufferedReader(new InputStreamReader(
-                                clientSocket.getInputStream()));
+            in = new BufferedReader(new InputStreamReader(
+                            clientSocket.getInputStream()));
         }catch(IOException e){
-                System.out.println("getInputStream failed: " + e);
-                System.exit(1);
+            System.out.println("getInputStream failed: " + e);
+            System.exit(1);
         }
 
         System.out.println("Connection Established: "
                            + clientSocket.getInetAddress());
 
-        while(!done){
-
-            try {
-                String firstMsg = in.readLine();
-                if (firstMsg.equals("")){
+        if (!isRequesting) {
+            while (true) {
+                try {
+                    String firstMsg = in.readLine();
+                    if (firstMsg.equals("")) {
                         // print response if simple user
                         out.println("Awaiting response on connection. New messages will not be received.");
-                }
-                if (acceptingConnection(firstMsg)){
+                    }
+                    if (acceptingConnection(firstMsg)) {
+                        out.println("<request reply=yes></request>");
+                        break;
+                    } else {
+                        out.println("<request reply=no></request>");
                         done = true;
+                        break;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-
         }
-        done = false;
 
         while(!done){
-
-//			if (!msgList.isEmpty())
-//			{
-//				Message msg = msgList.remove(0);
-//				out.println(msg.returnEncryptedText());
-//			}
             try{
             String incomingMsg = in.readLine();
                 if(incomingMsg==null){
                     System.out.println("Client disconnect!");
                     done = true;
                 }else{
-                //---------------------------- HERE WE HAVE A MSG -----------------------//
+                        //---------------------------- HERE WE HAVE A MSG -----------------------//
                     try {
                         String newMsg = cc.deTransformMessage(incomingMsg);
                         System.out.println(newMsg);
@@ -108,36 +109,42 @@ public class ClientThread extends Thread{
                     }
                 }
             }catch(IOException e){
-            System.out.println("readLine failed: " + e);
-            System.exit(1);
+                System.out.println("readLine failed: " + e);
+                System.exit(1);
             }
-        }
+	}
 
         try{
-                in.close();
-                out.close();
-                clientSocket.close();
+            in.close();
+            out.close();
+            clientSocket.close();
         }catch(IOException e){}
     }
 
 
     private boolean acceptingConnection(String str) {
 
-        boolean decision = false;
-        if (str.startsWith("<request>") && str.endsWith("</request>")){
+    	boolean decision = false;
+    	if (str.startsWith("<request>") && str.endsWith("</request>")){
             Object[] options = {"Accept", "Decline"};
+            System.out.println(myFrame);
             int n = JOptionPane.showOptionDialog(myFrame,"User " + str+ 
                     " would like to connect.","Incoming connection",
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.QUESTION_MESSAGE,null,options,options[1]);
+            
             if (n == JOptionPane.YES_OPTION){
                 decision = true;
-                cc = new ChatController(new User("anton"));  //fixa user
-                accepted = true; 
-
-
+                
+                cc = new ChatController(new User("anton"));
+            }
+            else{
+                decision = false;
             }
         }
+		
+		
+        
         else {
             // check if user wants to accept simple connection
             // block thread until decision has been made
@@ -161,8 +168,27 @@ public class ClientThread extends Thread{
                 System.exit(1);
             }
             out.println("<request>" + userID + "</request>");
-            cc = new ChatController(new User(userID));
-            return cc;
+            while (true) {
+                try {
+                    String msg = in.readLine();
+                    if (msg.startsWith("<request") && msg.endsWith("</request>")) {
+                        Document xml = XMLHandler.StringToXML(msg);
+                        String response = xml.getElementsByTagName("request").item(0).getAttributes().item(0).toString();
+
+                        if (response == "yes"){
+                            cc = new ChatController(new User(userID));
+                            allcc = new ChatController(new User("hi"));
+                            return cc;
+                        }
+                        else{
+                            done = true;
+                            return null;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 	}
 
 	public void send(String newMsg) {

@@ -108,35 +108,10 @@ public class MyFrame extends Thread{ //extends JFrame
 
                             Server thr1 = new Server(Integer.parseInt(portField.getText()));
                             thr1.start();
-                            if(thr1.returnAccepted()){
-                                ClientThread clientThread = thr1.returnClientThread();
-                                JComponent panel = makeTextPanel(clientThread);
-                                
-                                
-                            }
-                            
-                        //   Server server = new Server(Integer.parseInt(portField.getText()));
-                            
-                             
+                                                           
+                            }               
                         }
-                      //  JComponent panel = makeTextPanel();
-//                        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-//                        titlePanel.setOpaque(false);
-//                        JLabel titleLbl = new JLabel("Tab");
-//                        titleLbl.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 5));
-//                        titlePanel.add(titleLbl);
-//                        JButton closeButton = new JButton("x");
-//                        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-//
-//                        closeButton.addMouseListener(new MouseAdapter(){
-//                            public void mouseClicked(MouseEvent e){
-//                            tabbedPane.remove(panel);
-//                            }
-//                        });
-//                        titlePanel.add(closeButton);
-//                        tabbedPane.addTab("Tab", panel);
-//                        tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(panel),titlePanel);
-                    }
+                
                 });    
             }
         });       
@@ -194,8 +169,7 @@ public class MyFrame extends Thread{ //extends JFrame
 
         send.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e){
-                System.out.println(textField.getText());
-                clientThread.send("hej");
+                clientThread.send(textField.getText());
             }
 
         });
@@ -218,6 +192,7 @@ public class MyFrame extends Thread{ //extends JFrame
         colorButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Color newColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+
                 colorButton.setBackground(newColor);
             } 
         });
@@ -247,22 +222,6 @@ public class MyFrame extends Thread{ //extends JFrame
      
     public void changeUser() {
     }
-
-//    public int incomingUser(String userID) {
-//        Object[] options = {"Accept", "Decline"};
-//        int n = JOptionPane.showOptionDialog(frame,
-//                "User " + userID
-//                        + " would like to connect.",
-//                "Incoming connection",
-//                JOptionPane.YES_NO_CANCEL_OPTION,
-//                JOptionPane.QUESTION_MESSAGE,
-//                null,
-//                options,
-//                options[1]);
-//        return n;
-
-    
-
 
     // run program
     public static void main(String[] args) {

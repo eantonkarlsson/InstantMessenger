@@ -43,15 +43,11 @@ public class ChatController{
     private String encryptionMethod;
     private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
     private JTextPane chatPane;
-    private MyFrame myFrame;
-    private ClientThread clientThread;
 
-	public ChatController(MyFrame mainFrame, ClientThread thread) {
+	public ChatController() {
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
 		currentName = MyFrame.returnName();
-		myFrame = mainFrame;
-		clientThread = thread;
 	}
 
 	public void updatePanel(Message msg){
@@ -122,24 +118,24 @@ public class ChatController{
 
 	}
 
-	public String createMessage(String str) {
+	public Message createMessage(String str) {
 
 		try {
 			Message newMsg = new Message(str, transformText(str), currentName, currentColorRGB);
 			messages.add(newMsg);
-			updatePanel(newMsg);
-			return outgoingMessage = newMsg.returnXML();
+			// updatePanel(newMsg);
+			return newMsg;
 		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
 			e.printStackTrace();
 		}
-		return "99";
+		return new Message("Parser error", "Encryption error", currentName, currentColorRGB);
 	}
 
 	public void importMessage(Message msg) {
 		messages.add(msg);
 	}
 
-	public String deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public Message deTransformMessage(String msg) throws ParserConfigurationException, IOException, SAXException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 
 		Document xml = XMLHandler.StringToXML(msg);
 
@@ -156,7 +152,7 @@ public class ChatController{
 			Message newMsg = new Message(content[3], msg, content[0], content[1]);
 			messages.add(newMsg);
 			updatePanel(newMsg);
-			return content[3];
+			return newMsg;
 		}
 		else {
 			content[3] = xml.getElementsByTagName("encrypted").item(0).getTextContent();
@@ -164,7 +160,7 @@ public class ChatController{
 			Message newMsg = new Message(decryptedMsg, msg, content[0], content[1]);
 			messages.add(newMsg);
 			updatePanel(newMsg);
-			return decryptedMsg;
+			return newMsg;
 		}
 	}
 

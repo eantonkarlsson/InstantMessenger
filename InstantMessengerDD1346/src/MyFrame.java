@@ -87,18 +87,31 @@ public class MyFrame extends Thread{ //extends JFrame
                         if (adressField.getText().length()!=0){ //skapar client
 
                             ClientThread clientThread = null;
+                            ClientThread allClientThread = null;
                             try {
                                 clientThread = new ClientThread(new Socket(adressField.getText(),
-                                    Integer.parseInt(portField.getText())), true);
+                                    Integer.parseInt(portField.getText())), true, false);
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                             }
-                            ChatController cc = new ChatController(myFrame, clientThread);
+                            try {
+                                allClientThread = new ClientThread(new Socket(adressField.getText(),
+                                        Integer.parseInt(portField.getText()) + 1), true, false);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            }
+                            ChatController cc = new ChatController();
+                            ChatController allCC = new ChatController();
                             clientThread.addController(cc);
+                            allClientThread.addController(allCC);
                             clientThread.addFrame(frame);
+                            allClientThread.addFrame(frame);
+                            JPanel all = makeTextPanel(allClientThread);
                             JPanel temp = makeTextPanel(clientThread);
                             clientThread.addPanel(tabs.get(temp));
-                            clientThread.start();
+                            allClientThread.addPanel(tabs.get(all));
+                            clientThread.startWrapper(true);
+                            allClientThread.startWrapper(true);
 
                         }
                         // connect as server
@@ -154,13 +167,13 @@ public class MyFrame extends Thread{ //extends JFrame
     public JPanel makeTextPanelInternal(ClientThread clientThread) {
 
         JTextPane newtextArea = new JTextPane();
-        textField = new JTextField(30);
+        JTextField newTextField = new JTextField(30);
         newtextArea.setPreferredSize(new Dimension(500,500));
         JScrollPane editorScrollPane = new JScrollPane(newtextArea); //scroll
         //editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JButton colorButton = new JButton("Color");
         //file = new JButton("File");
-        send = new JButton("Send");
+        JButton newSend = new JButton("Send");
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
     
@@ -173,15 +186,15 @@ public class MyFrame extends Thread{ //extends JFrame
         panel.add(editorScrollPane, BorderLayout.CENTER);
         JPanel subPanel = new JPanel();
         
-        subPanel.add(textField);
+        subPanel.add(newTextField);
         //panel.add(file, BorderLayout.PAGE_END);
         subPanel.add(colorButton);
-        subPanel.add(send);
+        subPanel.add(newSend);
         panel.add(subPanel, BorderLayout.SOUTH); 
 
-        send.addActionListener(new ActionListener () {
+        newSend.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e){
-                clientThread.send(textField.getText());
+                clientThread.send(clientThread.returnController().createMessage(newTextField.getText()));
             }
 
         });

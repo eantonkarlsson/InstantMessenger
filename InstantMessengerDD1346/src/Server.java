@@ -40,7 +40,7 @@ public class Server extends Thread{
             }
             ClientThread thr = new ClientThread(clientSocket, false);
             ChatController cc = new ChatController(mainFrame, thr);
-            JPanel temp = mainFrame.makeTextPanel(thr);
+            JPanel temp = mainFrame.makeTextPanel(thr,cc);
             thr.addController(cc);
             thr.addPanel(mainFrame.tabs.get(temp));
             thr.start();

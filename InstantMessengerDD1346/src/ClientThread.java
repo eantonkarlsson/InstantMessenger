@@ -58,6 +58,8 @@ public class ClientThread extends Thread{
 	}
 
     public void run(){
+        
+        
 
         try{
             out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -113,12 +115,15 @@ public class ClientThread extends Thread{
 			try{
 				String incomingMsg = in.readLine();
 				if(incomingMsg==null){
-					System.out.println("Client disconnect!");
+					System.out.println(cc.returnName()+" disconnected!");
+                                      
+                                        
+                                        
 					done = true;
 				}else{
 
 					String newMsg = cc.deTransformMessage(incomingMsg);
-					System.out.println(newMsg);
+					
 			}
 			}catch(IOException e){
 			System.out.println("readLine failed: " + e);
@@ -127,12 +132,21 @@ public class ClientThread extends Thread{
 				e.printStackTrace();
 			}
 		}
+                
+          //      Runtime.getRuntime().addShutdownHook(new Thread() {
+          //          public void run() {
+          //              out.println(cc.returnName()+"logged out"+"<disconnect/>");
+                
+          //          }
+          //      });
 
 		try{
 			in.close();
 			out.close();
 			clientSocket.close();
 		}catch(IOException e){}
+                
+                
 		}
 
 
@@ -207,7 +221,7 @@ public class ClientThread extends Thread{
 						firstTime = false;
 
 					}
-					else if (response == "no"){
+					else if (response.endsWith("no\"")){
 						loopMe = false;
 						firstTime = false;
 						done = true;
@@ -223,10 +237,16 @@ public class ClientThread extends Thread{
             String outgoing = cc.createMessage(newMsg);
             out.println(outgoing);
 	}
+        
+        public void disconnect(){
+            String msg = (cc.returnName()+" logged out"+" <disconnect/>");
+            out.println(msg);
+            
+        }
 
-	public void kill() {
-    	done = true;
-	}
+	
+        
+       
 
 	public String requestKey(String text) {
 		return null;

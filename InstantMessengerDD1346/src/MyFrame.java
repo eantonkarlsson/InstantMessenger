@@ -36,7 +36,8 @@ public class MyFrame extends Thread{ //extends JFrame
     private boolean toggledColor = false;
     private MyFrame myFrame = this;
     private static String name; 
-    private Color currentColor = Color.BLACK; 
+    private String newHexColor = "#000000";
+    
     
     public void run() {    
         
@@ -96,7 +97,7 @@ public class MyFrame extends Thread{ //extends JFrame
                             ChatController cc = new ChatController(myFrame, clientThread);
                             clientThread.addController(cc);
                             clientThread.addFrame(frame);
-                            JPanel temp = makeTextPanel(clientThread);
+                            JPanel temp = makeTextPanel(clientThread,cc);
                             clientThread.addPanel(tabs.get(temp));
                             clientThread.start();
 
@@ -119,7 +120,7 @@ public class MyFrame extends Thread{ //extends JFrame
                 });    
             }
         });       
-                  
+        
         frame.setPreferredSize(new Dimension(750,750));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         frame.pack();
@@ -127,9 +128,9 @@ public class MyFrame extends Thread{ //extends JFrame
        
     } 
 
-    public JPanel makeTextPanel(ClientThread clientThread) {
+    public JPanel makeTextPanel(ClientThread clientThread, ChatController cc) {
 
-        JPanel panel = makeTextPanelInternal(clientThread);
+        JPanel panel = makeTextPanelInternal(clientThread, cc);
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setOpaque(false);
         JLabel titleLbl = new JLabel("Tab");
@@ -141,6 +142,7 @@ public class MyFrame extends Thread{ //extends JFrame
         closeButton.addMouseListener(new MouseAdapter(){
             public void mouseClicked(MouseEvent e){
                 tabbedPane.remove(panel);
+                clientThread.disconnect();
             }
         });
         titlePanel.add(closeButton);
@@ -151,7 +153,7 @@ public class MyFrame extends Thread{ //extends JFrame
     }
 
     // create tab
-    public JPanel makeTextPanelInternal(ClientThread clientThread) {
+    public JPanel makeTextPanelInternal(ClientThread clientThread, ChatController cc) {
 
         JTextPane newtextArea = new JTextPane();
         textField = new JTextField(30);
@@ -203,9 +205,13 @@ public class MyFrame extends Thread{ //extends JFrame
         colorButton.setBackground(Color.BLACK);
         colorButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                currentColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
-                
-
+                Color currentColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+                String hexColour = Integer.toHexString(currentColor.getRGB() & 0xffffff);
+                if (hexColour.length() < 6) {
+                    hexColour = "000000".substring(0, 6 - hexColour.length()) + hexColour;
+                }
+                newHexColor = "#" + hexColour;
+                cc.setColor(newHexColor); 
                 colorButton.setBackground(currentColor);
             } 
         });
@@ -213,7 +219,7 @@ public class MyFrame extends Thread{ //extends JFrame
     }
     
     // create close button on tabs
-    public JPanel getTitlePanel(JTabbedPane tabbedPane,JPanel panel, String title){
+    public JPanel getTitlePanel(JTabbedPane tabbedPane, JPanel panel, String title){
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setOpaque(false);
         JLabel titleLbl = new JLabel(title);
@@ -239,6 +245,8 @@ public class MyFrame extends Thread{ //extends JFrame
     public static String returnName(){
         return name; 
     }
+    
+   
 
     // run program
     public static void main(String[] args) {

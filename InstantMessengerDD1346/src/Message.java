@@ -1,4 +1,7 @@
 
+import java.awt.Color;
+
+
 
 public class Message {
 
@@ -25,6 +28,14 @@ public class Message {
     public String returnUser() { return user; }
 
     public String returnMsg() { return msg; }
+    
+    public Color returnColor(){
+        //System.out.println(colorRGB);
+        
+        Color color = Color.decode(colorRGB);
+        //System.out.println(color);
+        return color; 
+    }
 
 
     public void updateRGB(String RGB){

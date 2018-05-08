@@ -43,7 +43,7 @@ public class XMLHandler {
             return oneLineXML;
         } catch (TransformerException e) {
             e.printStackTrace();
-            return "";
+            return "a";
         }
     }
 }

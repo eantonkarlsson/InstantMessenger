@@ -39,16 +39,19 @@ public class ChatController{
     private Message incomingMessage;
     private String currentColorRGB;
     private String currentName;
-	private ArrayList<User> outgoingUsers = new ArrayList<>();
-	private String encryptionMethod;
-	private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
-	private JTextPane chatPane;
+    private ArrayList<User> outgoingUsers = new ArrayList<>();
+    private String encryptionMethod;
+    private static final String[] allowedEncryptionMethods = {"caesar","AES", "none"};
+    private JTextPane chatPane;
+    private MyFrame myFrame;
+    private ClientThread clientThread;
 
-	public ChatController(User user) {
-		outgoingUsers.add(user);
+	public ChatController(MyFrame mainFrame, ClientThread thread) {
 		encryptionMethod = "none";
 		currentColorRGB = "#000000";
-		currentName = "";
+		currentName = MyFrame.returnName();
+		myFrame = mainFrame;
+		clientThread = thread;
 	}
 
 	public void updatePanel(Message msg){
@@ -59,7 +62,7 @@ public class ChatController{
 		sw.append(msg.returnUser());
 		sw.append("]: ");
 		sw.append(msg.returnMsg());
-		sw.append("\\n");
+		sw.append("\n");
 		String s = sw.toString();
 
 		try {
@@ -76,6 +79,8 @@ public class ChatController{
 	public void addUser(User u){
 		outgoingUsers.add(u);
 	}
+
+    
 
 	public String transformText(String str) throws ParserConfigurationException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, TransformerException {
 
@@ -127,7 +132,7 @@ public class ChatController{
 		} catch (ParserConfigurationException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | TransformerException e) {
 			e.printStackTrace();
 		}
-		return "";
+		return "99";
 	}
 
 	public void importMessage(Message msg) {
@@ -169,7 +174,10 @@ public class ChatController{
     }
 
     public void setName(String name) { currentName = name; }
-
+    
+    public String returnName(){
+        return currentName; 
+    }
 
 
 public void setSelfUser(String name) {
@@ -177,22 +185,24 @@ public void setSelfUser(String name) {
     }
 
     public void changeCipher(String type) {
+                if (type == "AES") {
+			encryptCipher = new AESCipher();
 
-            if (type == "AES") {
-                    encryptCipher = new AESCipher();
+		
 
-            }
-            else if (type == "caesar") {
-                    encryptCipher = new CaesarCipher();
-            }
-            else {
-                    encryptCipher = null;
-            }
-    }
-
+		}
+		else if (type == "caesar") {
+			decryptCipher = new CaesarCipher();
+		}
+		else {
+			decryptCipher = null;
+		}
+	}
     public void changeDecryptionCipher(String type) {
-            if (type == "AES") {
-                    decryptCipher = new AESCipher();
+		if (type == "AES") {
+			decryptCipher = new AESCipher();
+
+		
 
             }
             else if (type == "caesar") {

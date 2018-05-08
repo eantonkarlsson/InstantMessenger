@@ -4,8 +4,12 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static javafx.scene.paint.Color.color;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -22,26 +26,19 @@ public class MyFrame extends Thread{ //extends JFrame
     private Session session;
     private User user;
     private JButton send;
-    private JButton file; 
+    //private JButton file; 
     private JTextField textField;
     private JTextPane textArea;
     private JTabbedPane tabbedPane;
     private JTextField nameField;
     private JButton setSettings;
+    public HashMap<JPanel, JTextPane> tabs = new HashMap<JPanel, JTextPane>();
     private boolean toggledColor = false;
+    private MyFrame myFrame = this;
+    private static String name; 
+    private Color currentColor = Color.BLACK; 
     
     public void run() {    
-//        menuBar = new JMenuBar();
-//        menu = new JMenu("User");
-//        menuItem = new JMenuItem("Name");
-//        menu.add(menuItem);
-//        menuItem = new JMenuItem("Color");
-//        menu.add(menuItem);
-//        menuBar.add(menu);
-//        menu = new JMenu("Server");
-//        menuBar.add(menu);
-//        menu = new JMenu("Client");
-//        menuBar.add(menu);
         
         // create startpage
         frame = new JFrame();
@@ -60,8 +57,8 @@ public class MyFrame extends Thread{ //extends JFrame
         // set name and open connect settings
         setName.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
-                String name = nameField.getText(); 
-                currentUser = new User(name);
+                name = nameField.getText(); 
+                
                 panel1.remove(nameField);
                 panel1.remove(label);
                 panel1.remove(setName);
@@ -91,15 +88,16 @@ public class MyFrame extends Thread{ //extends JFrame
                             ClientThread clientThread = null;
                             try {
                                 clientThread = new ClientThread(new Socket(adressField.getText(),
-                                    Integer.parseInt(portField.getText())));
+                                    Integer.parseInt(portField.getText())), true);
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                             }
+                            ChatController cc = new ChatController(myFrame, clientThread);
+                            clientThread.addController(cc);
                             clientThread.addFrame(frame);
+                            JPanel temp = makeTextPanel(clientThread);
+                            clientThread.addPanel(tabs.get(temp));
                             clientThread.start();
-                            ChatController cc = clientThread.requestAccess(currentUser.returnName());
-                            JComponent panel = makeTextPanel(clientThread);
-                            cc.addPanel(panel);
 
                         }
                         // connect as server
@@ -107,26 +105,31 @@ public class MyFrame extends Thread{ //extends JFrame
 
 
                             Server thr1 = new Server(Integer.parseInt(portField.getText()));
+                            thr1.addFrame(myFrame);
                             thr1.start();
-                                                           
-                            }               
+
+                            
+                        //   Server server = new Server(Integer.parseInt(portField.getText()));
+                            
+                             
                         }
+                    }
                 
                 });    
             }
         });       
            
-//        setJMenuBar(menuBar);
                 
-        frame.setSize(1000,1000);
+        frame.setPreferredSize(new Dimension(750,750));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+        frame.pack();
         frame.setVisible(true);
        
     } 
 
-    public JComponent makeTextPanel(ClientThread clientThread) {
+    public JPanel makeTextPanel(ClientThread clientThread) {
 
-        JComponent panel = makeTextPanelInternal(clientThread);
+        JPanel panel = makeTextPanelInternal(clientThread);
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setOpaque(false);
         JLabel titleLbl = new JLabel("Tab");
@@ -148,22 +151,25 @@ public class MyFrame extends Thread{ //extends JFrame
     }
 
     // create tab
-    public JComponent makeTextPanelInternal(ClientThread clientThread) {
+    public JPanel makeTextPanelInternal(ClientThread clientThread) {
 
-        textArea = new JTextPane();
+        JTextPane newtextArea = new JTextPane();
         textField = new JTextField(30);
-        textArea.setPreferredSize(new Dimension(1000,550));
+        newtextArea.setPreferredSize(new Dimension(700,550));
+        JScrollPane editorScrollPane = new JScrollPane(newtextArea); //scroll
+        editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JButton colorButton = new JButton("Color");
-        file = new JButton("File");
+        //file = new JButton("File");
         send = new JButton("Send");
         JPanel panel = new JPanel();
-        textArea.setEditable(false);
-        JScrollPane editorScrollPane = new JScrollPane(textArea); //scroll 
+        tabs.put(panel, newtextArea);
+        newtextArea.setEditable(false);
         
-        panel.add(textArea);
+        
+        panel.add(newtextArea);
         panel.add(editorScrollPane);
         panel.add(textField, BorderLayout.PAGE_END);
-        panel.add(file, BorderLayout.PAGE_END);
+        //panel.add(file, BorderLayout.PAGE_END);
         panel.add(colorButton, BorderLayout.PAGE_END);
         panel.add(send, BorderLayout.PAGE_END);
 
@@ -174,16 +180,16 @@ public class MyFrame extends Thread{ //extends JFrame
 
         });
      
-        JFileChooser fileChooser = new JFileChooser();
-        file.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            int returnValue = fileChooser.showOpenDialog(panel1);
-            if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fileChooser.getSelectedFile();
-                System.out.println(selectedFile.getName());
-            }
-        }
-        });
+//        JFileChooser fileChooser = new JFileChooser();
+//        file.addActionListener(new ActionListener() {
+//        public void actionPerformed(ActionEvent e) {
+//            int returnValue = fileChooser.showOpenDialog(panel1);
+//            if (returnValue == JFileChooser.APPROVE_OPTION) {
+//                File selectedFile = fileChooser.getSelectedFile();
+//                System.out.println(selectedFile.getName());
+//            }
+//        }
+//        });
 
         // choose color
         colorButton.setOpaque(true);  
@@ -191,9 +197,10 @@ public class MyFrame extends Thread{ //extends JFrame
         colorButton.setBackground(Color.BLACK);
         colorButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Color newColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+                currentColor = colorChooser.showDialog(panel1,"Color", Color.BLACK );
+                
 
-                colorButton.setBackground(newColor);
+                colorButton.setBackground(currentColor);
             } 
         });
         return panel;
@@ -221,6 +228,10 @@ public class MyFrame extends Thread{ //extends JFrame
     }
      
     public void changeUser() {
+    }
+    
+    public static String returnName(){
+        return name; 
     }
 
     // run program

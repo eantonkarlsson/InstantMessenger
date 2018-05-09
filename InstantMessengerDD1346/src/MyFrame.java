@@ -17,22 +17,11 @@ public class MyFrame extends Thread{ //extends JFrame
     // defining variables
     private JFrame frame;
     private JPanel panel1;
-    private JColorChooser colorChooser; 
-    private User currentUser;
-    private JMenuBar menuBar;
-    private JMenu menu;
-    private JMenuItem menuItem;
-    private Message message;
-    private Session session;
-    private User user;
-    private JButton send;
-    //private JButton file; 
-    private JTextField textField;
-    private JTextPane textArea;
+    private JColorChooser colorChooser;
     private JTabbedPane tabbedPane;
     private JTextField nameField;
     private JButton setSettings;
-    public HashMap<JPanel, JTextPane> tabs = new HashMap<JPanel, JTextPane>();
+    public HashMap<JPanel, JTextPane> tabs = new HashMap<>();
     private boolean toggledColor = false;
     private MyFrame myFrame = this;
     private static String name; 

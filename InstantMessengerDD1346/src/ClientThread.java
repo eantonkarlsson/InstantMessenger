@@ -77,6 +77,9 @@ public class ClientThread extends Thread{
 				}
 				else{
 					Message newMsg = cc.deTransformMessage(incomingMsg);
+					if (newMsg.isLastMessage()){
+					    killThread();
+                    }
 					// If multi-part server -> Echo message to all
 					if (allChat){
 						serv.sendToAll(newMsg);
@@ -259,7 +262,7 @@ public class ClientThread extends Thread{
 
 	public void disconnect(){
 	    // Users disconnect
-		String outStr = (cc.returnName() + " logged out" + " <disconnect/>");
+		String outStr = (cc.returnName() + " logged out" + " <disconnect><disconnect/> ");
 		Message msg = cc.createMessage(outStr);
 		send(msg);
 		killThread();
@@ -270,6 +273,7 @@ public class ClientThread extends Thread{
 			in.close();
 			out.close();
 			clientSocket.close();
+			done = true;
 		}catch(IOException e){
 			e.printStackTrace();
 		}

@@ -91,13 +91,13 @@ public class MyFrame extends Thread{ //extends JFrame
                             ClientThread allClientThread = null;
                             try {
                                 clientThread = new ClientThread(new Socket(adressField.getText(),
-                                    Integer.parseInt(portField.getText())), true, false);
+                                    Integer.parseInt(portField.getText())),false);
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                             }
                             try {
                                 allClientThread = new ClientThread(new Socket(adressField.getText(),
-                                        Integer.parseInt(portField.getText()) + 1), true, false);
+                                        Integer.parseInt(portField.getText()) + 1),false);
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                             }
@@ -107,12 +107,8 @@ public class MyFrame extends Thread{ //extends JFrame
                             allClientThread.addController(allCC);
                             clientThread.addFrame(frame);
                             allClientThread.addFrame(frame);
-                            JPanel all = makeTextPanel(allClientThread);
-                            JPanel temp = makeTextPanel(clientThread);
-                            clientThread.addPanel(tabs.get(temp));
-                            allClientThread.addPanel(tabs.get(all));
-                            clientThread.startWrapper(true);
-                            allClientThread.startWrapper(true);
+                            clientThread.startWrapper(true, myFrame);
+                            allClientThread.startWrapper(true, myFrame);
 
                         }
                         // connect as server
@@ -197,10 +193,11 @@ public class MyFrame extends Thread{ //extends JFrame
         newSend.addActionListener(new ActionListener () {
             public void actionPerformed(ActionEvent e){
                 clientThread.send(clientThread.returnController().createMessage(newTextField.getText()));
+                newTextField.setText("");
             }
 
         });
-     
+
 //        JFileChooser fileChooser = new JFileChooser();
 //        file.addActionListener(new ActionListener() {
 //        public void actionPerformed(ActionEvent e) {

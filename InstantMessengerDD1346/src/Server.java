@@ -1,18 +1,15 @@
 
-import javax.swing.*;
 import java.io.IOException;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class Server extends Thread{
     private ServerSocket serverSocket;
     private ServerSocket allServerSocket;
-    private User[] users;
-    private User user;
     private int port;
     private MyFrame mainFrame;
     private ArrayList<ClientThread> allThreads = new ArrayList<>();
-    private JPanel all = null;
     private ChatController allCC = null;
 
     public Server(int port) {
@@ -33,67 +30,44 @@ public class Server extends Thread{
     }
     
     public void run(){
-
         // Listen after clients
         while(true){
-            Socket clientSocket = null;
-            Socket allClientSocket = null;
             try {
-                clientSocket = serverSocket.accept();
-            } catch (IOException e) {
-                System.out.println("Accept failed:"+port);
-                System.exit(-1);
-            }
-            try {
-                allClientSocket = allServerSocket.accept();
-            } catch (IOException e) {
-                System.out.println("Accept failed:"+port);
-                System.exit(-1);
-            }
-            ClientThread thr = new ClientThread(clientSocket, false, false);
-            ClientThread allThr = new ClientThread(allClientSocket, false, true);
-            thr.setServer(this);
-            allThr.setServer(this);
-            allThreads.add(allThr);
-            ChatController cc = new ChatController();
+                // Thread/Socket for solo chat
+                Socket clientSocket = serverSocket.accept();
+                ClientThread thr = new ClientThread(clientSocket, false);
+                thr.setServer(this);
+                ChatController cc = new ChatController();
+                thr.addController(cc);
+                thr.startWrapper(false, mainFrame);
 
-            if (all == null){
-                allCC = new ChatController();
-                all = mainFrame.makeTextPanel(allThr, allCC);
+            } catch (IOException e) {
+                System.out.println("Accept failed:"+port);
+                System.exit(-1);
+            }
+            try {
+                // Thread/Socket for all-chat
+                Socket allClientSocket = allServerSocket.accept();
+                ClientThread allThr = new ClientThread(allClientSocket, true);
+                allThr.setServer(this);
+                allThreads.add(allThr);
+                if (allCC == null){
+                    allCC = new ChatController();
+                }
                 allThr.addController(allCC);
-                allThr.addPanel(mainFrame.tabs.get(all));
-
+                allThr.startWrapper(false, mainFrame);
+            } catch (IOException e) {
+                System.out.println("Accept failed:"+port);
+                System.exit(-1);
             }
-            allThr.addController(allCC);
-            JPanel temp = mainFrame.makeTextPanel(thr, cc);
-            thr.addController(cc);
-            thr.addPanel(mainFrame.tabs.get(temp));
-
-            thr.startWrapper(false);
-            allThr.startWrapper(false);
-
-            
         }
     }
 
     public void sendToAll(Message msg){
         for (ClientThread thr: allThreads){
-            thr.send(msg);
+            thr.echo(msg);
         }
-    }
-
-    public void echo(Message msg){
-
-    }
-
-
-    public void incomingConnection() {
-    }
-
-    public void incomingFile() {
-    }
-
-    public void addUser() {
+       //allCC.updatePanel(msg);
     }
 
 }

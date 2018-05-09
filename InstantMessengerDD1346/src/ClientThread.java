@@ -1,19 +1,19 @@
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
-import java.net.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 
 /**
  * Denna kod beskriver de trådar som hanterar
@@ -28,22 +28,19 @@ public class ClientThread extends Thread{
     private Socket clientSocket = null;
     private PrintWriter out;
     private BufferedReader in;
-    private ArrayList<Message> msgList = new ArrayList<>();
     private boolean done = false;
-    private boolean isRequesting = false;
     private boolean firstTime = true;
     private ChatController cc;
-    private ChatController allcc;
-    private JFrame myFrame;
+    private JFrame jFrame;
     private boolean allChat;
     private Server serv;
+    private static JPanel allPanel = null;
 
     
 
     // Konstruktorn sparar socketen lokalt
-    public ClientThread(Socket sock, boolean requestor, boolean isAllChat){
+    public ClientThread(Socket sock, boolean isAllChat){
 		clientSocket = sock;
-		isRequesting = requestor;
 		allChat = isAllChat;
 	}
 
@@ -52,11 +49,7 @@ public class ClientThread extends Thread{
 	public void setServer(Server server){ serv = server; }
 
     public void addFrame(JFrame frame){
-    	myFrame = frame;
-	}
-
-	public void addPanel(JTextPane panel){
-    	cc.addPanel(panel);
+    	jFrame = frame;
 	}
 
 	public void addController(ChatController chatController)
@@ -67,9 +60,7 @@ public class ClientThread extends Thread{
 	public ChatController returnController(){ return cc; }
 
     public void run(){
-
-
-
+		// Setup
         try{
             out = new PrintWriter(clientSocket.getOutputStream(), true);
         }catch(IOException e){
@@ -84,42 +75,43 @@ public class ClientThread extends Thread{
             System.exit(1);
 		}
 
-
 		while(!done){
-
 			try{
 				String incomingMsg = in.readLine();
+				// This means the user on the other end ended the communication
 				if(incomingMsg==null){
-					System.out.println(cc.returnName()+" disconnected!");
+					System.out.println("User disconnected!");
 					done = true;
-				}else{
-
+				}
+				else{
 					Message newMsg = cc.deTransformMessage(incomingMsg);
+					// If multi-part server -> Echo message to all
 					if (allChat){
 						serv.sendToAll(newMsg);
 					}
-					else if (serv != null){
-						send(newMsg);
+					// If single-part server -> Echo message to sender
+					else{
+						if (serv != null){
+							echo(newMsg);
+						}
 					}
-			}
+				}
 			}catch(IOException e){
 			System.out.println("readLine failed: " + e);
 			System.exit(1);
-			} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | ParserConfigurationException | SAXException | BadPaddingException | IllegalBlockSizeException e) {
+			}catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | ParserConfigurationException | SAXException | BadPaddingException | IllegalBlockSizeException e) {
 				e.printStackTrace();
 			}
 		}
 
-		try{
-			in.close();
-			out.close();
-			clientSocket.close();
-		}catch(IOException e){
-			e.printStackTrace();
-		}
+		// If we arrive here the communication should end
+		killThread();
+
+
 		}
 
-	public void startWrapper(boolean isRequesting){
+	public void startWrapper(boolean isRequesting, MyFrame myFrame){
+    	// Setup
 		try{
 			out = new PrintWriter(clientSocket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(
@@ -128,47 +120,83 @@ public class ClientThread extends Thread{
 			System.out.println("getOutputStream failed: " + e);
 			System.exit(1);
 		}
+		// If client, request access
 		if (isRequesting) {
-			requestAccess(cc.returnName());
+			if(requestAccess(cc.returnName())){
+				JPanel temp = myFrame.makeTextPanel(this, cc);
+				cc.addPanel(myFrame.tabs.get(temp));
+				this.start();
+			}
+			else{
+				killThread();
+			}
 		}
+		// If server, respond to access requests
 		else {
 			long endTime = System.currentTimeMillis() + 3000;
-			while (firstTime) {
+			while (true) {
 				// Assume simple user if no request message within 3 seconds
 				if (System.currentTimeMillis() > endTime) {
 					if (incomingConnection("")) {
-						out.println("<request reply=\"yes\"> </request>");
-						firstTime = false;
+						// Print welcome message and set up chat panel
+						out.println("Connection accepted");
+						if (allChat){
+							if (allPanel == null){
+								allPanel = myFrame.makeTextPanel(this, cc);
+								cc.addPanel(myFrame.tabs.get(allPanel));
+							}
+						}
+						else {
+							if (myFrame != null) {
+								JPanel temp = myFrame.makeTextPanel(this, cc);
+								cc.addPanel(myFrame.tabs.get(temp));
+							}
+						}
+						this.start();
+						break;
 					} else {
-						out.println("<request reply=\"no\"> </request>");
-						done = true;
-						firstTime = false;
+						out.println("Connection denied");
+						killThread();
+						break;
 					}
 				} else {
 					try {
 						String firstMsg = in.readLine();
 						if (incomingConnection(firstMsg)) {
 							out.println("<request reply=\"yes\"> </request>");
-							firstTime = false;
+							if (allChat){
+								if (allPanel == null){
+									allPanel = myFrame.makeTextPanel(this, cc);
+									cc.addPanel(myFrame.tabs.get(allPanel));
+								}
+							}
+							else {
+								if (myFrame != null) {
+									JPanel temp = myFrame.makeTextPanel(this, cc);
+									cc.addPanel(myFrame.tabs.get(temp));
+								}
+							}
+							this.start();
+							break;
 						} else {
 							out.println("<request reply=\"no\"> </request>");
-							done = true;
-							firstTime = false;
+							killThread();
+							break;
 						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
-				this.start();
 			}
 		}
 	}
 
     private boolean incomingConnection(String str) {
-
+		// Respond to connection request
+		// From an user implementing the B1 criteria
 		if (str.startsWith("<request>") && str.endsWith("</request>")){
 			Object[] options = {"Accept", "Decline"};
-			int n = JOptionPane.showOptionDialog(myFrame,
+			int n = JOptionPane.showOptionDialog(jFrame,
 					"User " + str.substring(9, str.length()-10)
 							+ " would like to connect.",
 					"Incoming connection",
@@ -179,9 +207,10 @@ public class ClientThread extends Thread{
 					options[0]);
 			return n == JOptionPane.YES_OPTION;
 		}
+		// From a simple user
 		else {
 			Object[] options = {"Accept", "Decline"};
-			int n = JOptionPane.showOptionDialog(myFrame,
+			int n = JOptionPane.showOptionDialog(jFrame,
 					"A simple user would like to connect.",
 					"Incoming connection",
 					JOptionPane.YES_NO_CANCEL_OPTION,
@@ -192,42 +221,21 @@ public class ClientThread extends Thread{
 			return n == JOptionPane.YES_OPTION;
         }
 	}
-        
 
-
-	private void newUser() {
-
-	}
-
-	public ChatController requestAccessWrapper(String userID)
-	{
-		requestAccess(userID);
-		return cc;
-
-	}
-
-	public void requestAccess(String userID) {
-
+	private boolean requestAccess(String userID) {
+		// Send out message request
 		out.println("<request>" + userID + "</request>");
-		boolean loopMe = true;
-		while (loopMe) {
+		while (true) {
 			try {
 				String msg = in.readLine();
 				if (msg.startsWith("<request") && msg.endsWith("</request>")) {
 					Document xml = XMLHandler.StringToXML(msg);
 					String response = xml.getElementsByTagName("request").item(0).getAttributes().item(0).toString();
-					System.out.println(response);
 					if (response.endsWith("yes\"")){
-						// cc = new ChatController(new User(userID));
-						// allcc = new ChatController(new User("hi"));
-						loopMe = false;
-						firstTime = false;
-
+						return true;
 					}
 					else if (response.endsWith("no\"")){
-						loopMe = false;
-						firstTime = false;
-						done = true;
+						return false;
 					}
 				}
 			} catch (IOException e) {
@@ -237,21 +245,40 @@ public class ClientThread extends Thread{
 	}
 
 	public void send(Message newMsg) {
-            String outgoing = newMsg.returnXML();
-            out.println(outgoing);
+		// If sending from the multi-part server thread, we need to send it to all
+		if (allChat){
+			serv.sendToAll(newMsg);
+		}
+		// If any other thread, send regularly
+		else{
+			String outgoing = newMsg.returnXML();
+			out.println(outgoing);
+		}
+		// If we are sending from a server, the message will not get echoed and needs to be printed manually
+		if (serv != null){
+			cc.updatePanel(newMsg);
+		}
 	}
 
-        public void disconnect(){
-            String msg = (cc.returnName()+" logged out"+" <disconnect/>");
-            out.println(msg);
+	public void echo(Message newMsg) {
+		String outgoing = newMsg.returnXML();
+		out.println(outgoing);
+	}
 
-        }
+	public void disconnect(){
+		String outStr = (cc.returnName() + " logged out" + " <disconnect/>");
+		Message msg = cc.createMessage(outStr);
+		send(msg);
+		killThread();
+	}
 
-
-
-
-
-	public String requestKey(String text) {
-		return null;
+	private void killThread(){
+		try{
+			in.close();
+			out.close();
+			clientSocket.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
 	}
 }

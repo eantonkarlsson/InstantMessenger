@@ -25,15 +25,16 @@ public class Message {
         return xml;
     }
 
-    public String returnUser() { return user; }
+    public String returnUser() { 
+        return user; 
+    }
 
-    public String returnMsg() { return msg; }
+    public String returnMsg() { 
+        return msg; 
+    }
     
-    public Color returnColor(){
-        //System.out.println(colorRGB);
-        
+    public Color returnColor(){       
         Color color = Color.decode(colorRGB);
-        //System.out.println(color);
         return color; 
     }
 

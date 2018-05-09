@@ -15,14 +15,6 @@ import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-/**
- * Denna kod beskriver de trådar som hanterar
- * anslutningar till MultiThreadedServerDemo
- * Varje tråd läser in sin klients meddelanden,
- * konverterar det till versaler och skickar
- * tillbaka det. Tråden avslutar när klienten
- * kopplar ner.
- */
 public class ClientThread extends Thread{
 
     private Socket clientSocket = null;
@@ -36,28 +28,28 @@ public class ClientThread extends Thread{
     private Server serv;
     private static JPanel allPanel = null;
 
-    
-
-    // Konstruktorn sparar socketen lokalt
+    // Constructor saves socket localy
     public ClientThread(Socket sock, boolean isAllChat){
-		clientSocket = sock;
-		allChat = isAllChat;
+            clientSocket = sock;
+            allChat = isAllChat;
 	}
 
-	public void acceptConnection() {firstTime = false;}
 
-	public void setServer(Server server){ serv = server; }
+    public void setServer(Server server){
+        serv = server;
+    }
 
     public void addFrame(JFrame frame){
     	jFrame = frame;
 	}
 
-	public void addController(ChatController chatController)
-	{
-		cc = chatController;
-	}
+    public void addController(ChatController chatController){
+        cc = chatController;
+    }
 
-	public ChatController returnController(){ return cc; }
+    public ChatController returnController(){
+        return cc;
+    }
 
     public void run(){
 		// Setup
@@ -266,6 +258,7 @@ public class ClientThread extends Thread{
 	}
 
 	public void disconnect(){
+	    // Users disconnect
 		String outStr = (cc.returnName() + " logged out" + " <disconnect/>");
 		Message msg = cc.createMessage(outStr);
 		send(msg);

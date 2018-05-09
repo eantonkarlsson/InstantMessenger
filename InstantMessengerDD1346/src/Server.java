@@ -24,8 +24,7 @@ public class Server extends Thread{
         }
     }
 
-    public void addFrame(MyFrame myFrame)
-    {
+    public void addFrame(MyFrame myFrame){
         mainFrame = myFrame;
     }
     
@@ -67,7 +66,6 @@ public class Server extends Thread{
         for (ClientThread thr: allThreads){
             thr.echo(msg);
         }
-       //allCC.updatePanel(msg);
     }
 
 }
